@@ -16,15 +16,21 @@ Configura le seguenti regole di hostname per far corrispondere i sottodomini ai 
 | Public Hostname (Sottodominio)    | Path (Opzionale) | Service Type | URL (Nome Container)                 | Note                      |
 | :-------------------------------- | :--------------- | :----------- | :----------------------------------- | :------------------------ |
 | `robertoingenito.com`             | _Vuoto_          | HTTP         | `http://portfolio-app:80`            | Portfolio Principale      |
-| `cashly.robertoingenito.com`      | _Vuoto_          | HTTP         | `http://cashly-front-end:80`         | Frontend di Cashly        |
 | `cashly.robertoingenito.com`      | `/cashly-api*`   | HTTP         | `http://cashly-back-end:80`          | Backend API di Cashly     |
 | `cashly.robertoingenito.com`      | `/swagger*`      | HTTP         | `http://cashly-back-end:80`          | Documentazione API        |
-| `mr-white.robertoingenito.com`    | _Vuoto_          | HTTP         | `http://mr-white-front-end:3000`     | Frontend di Mr. White     |
+| `cashly.robertoingenito.com`      | _Vuoto_          | HTTP         | `http://cashly-front-end:80`         | Frontend di Cashly        |
 | `mr-white.robertoingenito.com`    | `/mr-white-api*` | HTTP         | `http://mr-white-back-end:80`        | Backend WebSockets        |
+| `mr-white.robertoingenito.com`    | _Vuoto_          | HTTP         | `http://mr-white-front-end:3000`     | Frontend di Mr. White     |
 | `cloud.robertoingenito.com`       | _Vuoto_          | HTTP         | `http://nextcloud-app:80`            | Nextcloud Storage         |
 | `obsidian.robertoingenito.com`    | _Vuoto_          | HTTP         | `http://couchdb-obsidian:5984`       | Sincronizzazione Obsidian |
 | `timesheet.robertoingenito.com`   | _Vuoto_          | HTTP         | `http://fortil-excel-timesheet:3000` | Timesheet utility         |
 | `calcolatori.robertoingenito.com` | _Vuoto_          | HTTP         | `http://static-files:80`             | Pagine utility statiche   |
+
+> [!IMPORTANT]
+> **ORDINE DELLE REGISTRAZIONI (ROTTE) SU CLOUDFLARE:**
+> L'ordine con cui le rotte sono posizionate in Cloudflare è fondamentale. Cloudflare valuta le regole dall'alto verso il basso:
+> 1. Le rotte con un percorso specifico (come `/cashly-api*` o `/swagger*`) **devono essere posizionate SOPRA** alla rotta generica con percorso vuoto (`_Vuoto_`).
+> 2. Se la rotta con percorso `_Vuoto_` (che punta al frontend) si trova sopra le altre, Cloudflare catturerà tutto il traffico indirizzato a quel sottodominio e lo invierà al frontend, ignorando le regole successive per le API o Swagger.
 
 > [!NOTE]
 > Per le regole con path (es. `/cashly-api*`), Cloudflare inoltrerà automaticamente il path al container. Questo mantiene l'API ed il frontend sullo stesso sottodominio, eliminando problemi di CORS.
