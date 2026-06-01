@@ -1,0 +1,1530 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Forfettario — Calcolatore Tasse</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      :root {
+        --bg: #f5f2eb;
+        --ink: #1a1714;
+        --muted: #8a8070;
+        --accent: #c8492a;
+        --green: #3a7d5c;
+        --border: #d6d0c4;
+        --white: #ffffff;
+      }
+
+      html {
+        font-size: 16px;
+        scroll-behavior: smooth;
+      }
+
+      body {
+        background: var(--bg);
+        color: var(--ink);
+        font-family: "DM Mono", monospace;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 0 24px 100px;
+        position: relative;
+        overflow-x: hidden;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+        pointer-events: none;
+        z-index: 999;
+        opacity: 0.5;
+      }
+
+      /* ─── TAB NAV ─── */
+      .tab-nav {
+        width: 100%;
+        max-width: 600px;
+        display: flex;
+        margin: 40px 0 0;
+        border-bottom: 1.5px solid var(--border);
+      }
+
+      .tab-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-family: "DM Mono", monospace;
+        font-size: 10px;
+        font-weight: 500;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: var(--muted);
+        padding: 14px 0;
+        margin-right: 32px;
+        position: relative;
+        transition: color 0.2s;
+        white-space: nowrap;
+      }
+      .tab-btn::after {
+        content: "";
+        position: absolute;
+        bottom: -1.5px;
+        left: 0;
+        right: 0;
+        height: 1.5px;
+        background: var(--ink);
+        transform: scaleX(0);
+        transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      .tab-btn.active {
+        color: var(--ink);
+      }
+      .tab-btn.active::after {
+        transform: scaleX(1);
+      }
+
+      /* ─── PAGES ─── */
+      .page {
+        width: 100%;
+        max-width: 600px;
+        display: none;
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .page.active {
+        display: flex;
+      }
+
+      /* ─── HEADER ─── */
+      header {
+        text-align: center;
+        margin: 52px 0 44px;
+        animation: fadeUp 0.7s ease both;
+      }
+      .eyebrow {
+        font-size: 10px;
+        font-weight: 500;
+        letter-spacing: 0.25em;
+        text-transform: uppercase;
+        color: var(--accent);
+        margin-bottom: 14px;
+      }
+      h1 {
+        font-family: "DM Serif Display", serif;
+        font-size: clamp(2.6rem, 6vw, 4.2rem);
+        line-height: 1;
+        font-weight: 400;
+      }
+      h1 em {
+        font-style: italic;
+        color: var(--muted);
+      }
+      .subtitle {
+        margin-top: 14px;
+        font-size: 11px;
+        color: var(--muted);
+        letter-spacing: 0.05em;
+        line-height: 1.75;
+      }
+
+      /* ─── CARD ─── */
+      .card {
+        background: var(--white);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 36px 40px;
+        animation: fadeUp 0.7s 0.1s ease both;
+        box-shadow:
+          0 1px 3px rgba(0, 0, 0, 0.04),
+          0 8px 32px rgba(0, 0, 0, 0.04);
+        margin-bottom: 0;
+      }
+      .card + .card {
+        margin-top: 12px;
+      }
+
+      /* ─── FIELDS ─── */
+      .field {
+        margin-bottom: 28px;
+      }
+      .field:last-child {
+        margin-bottom: 0;
+      }
+      .field-group {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px 32px;
+        margin-bottom: 28px;
+      }
+      .field-group:last-child {
+        margin-bottom: 0;
+      }
+      @media (max-width: 480px) {
+        .field-group {
+          grid-template-columns: 1fr;
+          gap: 20px;
+        }
+      }
+      .field-group .full {
+        grid-column: 1/-1;
+      }
+
+      label {
+        display: block;
+        font-size: 10px;
+        font-weight: 500;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 9px;
+      }
+      .label-note {
+        opacity: 0.55;
+        text-transform: none;
+        letter-spacing: 0;
+        font-size: 9px;
+      }
+
+      .input-row {
+        display: flex;
+        align-items: center;
+        border-bottom: 1.5px solid var(--ink);
+        transition: border-color 0.2s;
+        padding-bottom: 7px;
+      }
+      .input-row:focus-within {
+        border-color: var(--accent);
+      }
+
+      input[type="number"] {
+        flex: 1;
+        background: none;
+        border: none;
+        outline: none;
+        font-family: "DM Serif Display", serif;
+        font-size: 2rem;
+        color: var(--ink);
+        width: 100%;
+        -moz-appearance: textfield;
+      }
+      input[type="number"]::-webkit-outer-spin-button,
+      input[type="number"]::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+      }
+
+      .unit {
+        font-family: "DM Mono", monospace;
+        font-size: 18px;
+        color: var(--muted);
+        letter-spacing: 0.1em;
+        white-space: nowrap;
+        padding-left: 8px;
+      }
+
+      .divider {
+        height: 1px;
+        background: var(--border);
+        margin: 8px 0 28px;
+      }
+
+      /* ─── SUBSECTION LABEL ─── */
+      .sub-label {
+        font-size: 10px;
+        font-weight: 500;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 22px;
+        padding-top: 28px;
+        border-top: 1px solid var(--border);
+        margin-top: 28px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .sub-label .sub-note {
+        font-size: 9px;
+        opacity: 0.55;
+        text-transform: none;
+        letter-spacing: 0;
+        font-weight: 400;
+      }
+
+      /* ─── TOGGLE ─── */
+      .toggle-group {
+        display: inline-flex;
+        border: 1.5px solid var(--border);
+        border-radius: 3px;
+        overflow: hidden;
+      }
+      .toggle-btn {
+        background: none;
+        border: none;
+        font-family: "DM Mono", monospace;
+        font-size: 10px;
+        font-weight: 500;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        color: var(--muted);
+        padding: 9px 22px;
+        cursor: pointer;
+        transition:
+          background 0.18s,
+          color 0.18s;
+      }
+      .toggle-btn.active {
+        background: var(--ink);
+        color: var(--bg);
+      }
+
+      /* ─── CALC BUTTON ─── */
+      .btn-calc {
+        margin-top: 28px;
+        background: var(--ink);
+        color: var(--bg);
+        border: none;
+        border-radius: 3px;
+        padding: 14px 32px;
+        font-family: "DM Mono", monospace;
+        font-size: 10px;
+        font-weight: 500;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        transition: opacity 0.2s;
+      }
+      .btn-calc:hover {
+        opacity: 0.8;
+      }
+      .btn-calc-arrow {
+        transition: transform 0.2s;
+      }
+      .btn-calc:hover .btn-calc-arrow {
+        transform: translateX(3px);
+      }
+
+      /* ─── ERROR ─── */
+      .err {
+        display: none;
+        margin-top: 16px;
+        padding: 12px 16px;
+        border-left: 2px solid var(--accent);
+        background: rgba(200, 73, 42, 0.06);
+        font-size: 10px;
+        color: var(--accent);
+        letter-spacing: 0.04em;
+        line-height: 1.6;
+        border-radius: 0 3px 3px 0;
+      }
+      .err.on {
+        display: block;
+      }
+
+      /* ─── RESULT CARD (dark) ─── */
+      .result-card {
+        background: var(--ink);
+        color: var(--bg);
+        border-radius: 4px;
+        padding: 36px 40px;
+        margin-top: 12px;
+        position: relative;
+        overflow: hidden;
+        display: none;
+        animation: fadeUp 0.4s ease both;
+      }
+      .result-card.visible {
+        display: block;
+      }
+      .result-card::after {
+        content: "";
+        position: absolute;
+        top: -40px;
+        right: -40px;
+        width: 200px;
+        height: 200px;
+        border-radius: 50%;
+        background: var(--accent);
+        opacity: 0.1;
+        pointer-events: none;
+      }
+
+      .result-eyebrow {
+        font-size: 10px;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: rgba(245, 242, 235, 0.4);
+        margin-bottom: 32px;
+      }
+
+      /* ─── RESULT TABLE ─── */
+      .result-section {
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        padding-top: 22px;
+        margin-top: 22px;
+      }
+      .result-section:first-of-type {
+        border-top: none;
+        padding-top: 0;
+        margin-top: 0;
+      }
+
+      .result-section-title {
+        font-size: 9px;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: rgba(245, 242, 235, 0.28);
+        margin-bottom: 16px;
+      }
+
+      .r-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: 14px;
+        gap: 16px;
+      }
+      .r-row:last-child {
+        margin-bottom: 0;
+      }
+      .r-row.sub {
+        padding-left: 14px;
+        margin-bottom: 10px;
+      }
+      .r-row.sub .r-lbl {
+        color: rgba(245, 242, 235, 0.28);
+        font-size: 9px;
+      }
+
+      .r-lbl {
+        font-size: 10px;
+        letter-spacing: 0.1em;
+        color: rgba(245, 242, 235, 0.45);
+        flex: 1;
+        line-height: 1.4;
+      }
+      .r-lbl small {
+        display: block;
+        font-size: 8.5px;
+        opacity: 0.6;
+        margin-top: 1px;
+        letter-spacing: 0.06em;
+        font-weight: 300;
+      }
+
+      .r-val {
+        font-family: "DM Serif Display", serif;
+        font-size: 1.45rem;
+        color: var(--white);
+        white-space: nowrap;
+      }
+      .r-val.green {
+        color: #7ecba1;
+      }
+      .r-val.muted {
+        color: rgba(245, 242, 235, 0.4);
+        font-size: 1.1rem;
+      }
+      .r-val.neg {
+        color: #7ecba1;
+        font-size: 1.1rem;
+      }
+      .r-val.small {
+        font-size: 1.1rem;
+        color: rgba(245, 242, 235, 0.55);
+      }
+
+      /* ─── TOTAL BLOCK ─── */
+      .total-block {
+        background: rgba(255, 255, 255, 0.06);
+        border-radius: 3px;
+        padding: 18px 22px;
+        margin-top: 24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+      }
+      .total-block-lbl {
+        font-size: 10px;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        color: rgba(245, 242, 235, 0.5);
+        line-height: 1.5;
+      }
+      .total-block-lbl small {
+        display: block;
+        font-size: 8.5px;
+        opacity: 0.65;
+        margin-top: 2px;
+        letter-spacing: 0.06em;
+      }
+      .total-block-val {
+        font-family: "DM Serif Display", serif;
+        font-size: clamp(2rem, 5vw, 2.8rem);
+        color: var(--white);
+        white-space: nowrap;
+      }
+
+      /* ─── SCADENZARIO ─── */
+      .scad-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1px;
+        background: rgba(255, 255, 255, 0.1);
+        margin-top: 24px;
+        border-radius: 3px;
+        overflow: hidden;
+      }
+      @media (max-width: 400px) {
+        .scad-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .scad-col {
+        background: rgba(255, 255, 255, 0.04);
+        padding: 18px 20px;
+      }
+      .scad-date {
+        font-size: 9px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: rgba(245, 242, 235, 0.35);
+        margin-bottom: 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .scad-date em {
+        color: rgba(245, 242, 235, 0.6);
+        font-style: normal;
+      }
+      .scad-r {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        padding: 5px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        gap: 8px;
+        font-size: 9.5px;
+      }
+      .scad-r:last-of-type {
+        border-bottom: none;
+      }
+      .scad-name {
+        color: rgba(245, 242, 235, 0.35);
+        flex: 1;
+      }
+      .scad-amt {
+        font-family: "DM Serif Display", serif;
+        font-size: 0.95rem;
+        color: var(--white);
+        white-space: nowrap;
+      }
+      .scad-tot {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        padding-top: 10px;
+        margin-top: 8px;
+        border-top: 1px solid rgba(255, 255, 255, 0.15);
+        font-size: 10px;
+        letter-spacing: 0.06em;
+      }
+      .scad-tot-amt {
+        font-family: "DM Serif Display", serif;
+        font-size: 1.2rem;
+        color: var(--white);
+      }
+
+      /* ─── BASE CALC RESULT CARD ─── */
+      .base-card {
+        background: var(--white);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 36px 40px;
+        margin-top: 12px;
+        display: none;
+        animation: fadeUp 0.4s ease both;
+        box-shadow:
+          0 1px 3px rgba(0, 0, 0, 0.04),
+          0 8px 32px rgba(0, 0, 0, 0.04);
+      }
+      .base-card.visible {
+        display: block;
+      }
+
+      .base-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--border);
+        gap: 16px;
+      }
+      .base-row:last-child {
+        border-bottom: none;
+      }
+      .base-row.sub {
+        padding-left: 14px;
+      }
+      .base-row.sub .base-lbl {
+        color: var(--muted);
+        font-size: 9.5px;
+      }
+      .base-lbl {
+        font-size: 10.5px;
+        letter-spacing: 0.05em;
+        color: var(--ink);
+        flex: 1;
+        line-height: 1.4;
+      }
+      .base-lbl small {
+        display: block;
+        font-size: 9px;
+        color: var(--muted);
+        margin-top: 1px;
+        letter-spacing: 0.04em;
+      }
+      .base-val {
+        font-family: "DM Serif Display", serif;
+        font-size: 1.35rem;
+        color: var(--ink);
+        white-space: nowrap;
+      }
+      .base-val.accent {
+        color: var(--accent);
+      }
+      .base-val.green {
+        color: var(--green);
+      }
+      .base-val.muted {
+        color: var(--muted);
+        font-size: 1.1rem;
+      }
+
+      .chips-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1px;
+        background: var(--border);
+        margin-top: 20px;
+        border-radius: 3px;
+        overflow: hidden;
+      }
+      .chip-box {
+        background: var(--bg);
+        padding: 14px 18px;
+      }
+      .chip-label {
+        font-size: 9px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 6px;
+        display: block;
+      }
+      .chip-value {
+        font-family: "DM Serif Display", serif;
+        font-size: 1.5rem;
+        color: var(--ink);
+      }
+
+      /* ─── YEAR BLOCK (pluriennale) ─── */
+      .yr-block {
+        margin-top: 32px;
+      }
+      .yr-block + .yr-block {
+        margin-top: 48px;
+      }
+      .yr-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 9px;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 12px;
+        padding-bottom: 12px;
+        border-bottom: 1.5px solid var(--border);
+        width: 100%;
+      }
+      .yr-badge em {
+        color: var(--ink);
+        font-style: normal;
+        font-size: 10px;
+      }
+
+      /* ─── YEAR INPUT ROWS ─── */
+      .year-rows {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+      }
+      .yr-row {
+        padding: 18px 0;
+        border-bottom: 1px solid var(--border);
+      }
+      .yr-row:first-child {
+        border-top: 1px solid var(--border);
+      }
+      .yr-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      .yr-label {
+        font-size: 9px;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      .yr-label em {
+        color: var(--ink);
+        font-style: normal;
+      }
+      .btn-rm {
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-family: "DM Mono", monospace;
+        font-size: 9px;
+        color: var(--muted);
+        letter-spacing: 0.1em;
+        transition: color 0.15s;
+      }
+      .btn-rm:hover {
+        color: var(--accent);
+      }
+
+      .btn-add {
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-family: "DM Mono", monospace;
+        font-size: 10px;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: var(--muted);
+        padding: 16px 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        transition: color 0.2s;
+      }
+      .btn-add:hover {
+        color: var(--ink);
+      }
+      .btn-add::before {
+        content: "";
+        display: block;
+        width: 14px;
+        height: 1px;
+        background: currentColor;
+      }
+
+      /* ─── NOTE ─── */
+      .note {
+        margin-top: 32px;
+        font-size: 10px;
+        color: var(--muted);
+        text-align: center;
+        letter-spacing: 0.05em;
+        line-height: 1.8;
+        animation: fadeUp 0.7s 0.3s ease both;
+      }
+
+      /* ─── PANELS ─── */
+      .m-panel {
+        display: none;
+      }
+      .m-panel.on {
+        display: flex;
+        flex-direction: column;
+      }
+
+      @keyframes fadeUp {
+        from {
+          opacity: 0;
+          transform: translateY(14px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* ─── PRINT ─── */
+      @media print {
+        @page {
+          size: A4;
+          margin: 0.15in;
+        }
+
+        * {
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+
+        body {
+          background: white !important;
+          padding: 0 !important;
+          display: block !important;
+        }
+
+        body::before,
+        .tab-nav,
+        .btn-calc,
+        .btn-add,
+        .note,
+        .btn-export,
+        .err,
+        header .eyebrow,
+        header .subtitle {
+          display: none !important;
+        }
+
+        header {
+          margin: 0 0 24px !important;
+          text-align: left !important;
+          animation: none !important;
+        }
+
+        h1 {
+          font-size: 2rem !important;
+        }
+
+        .card {
+          display: none !important;
+        }
+
+        .page,
+        .m-panel {
+          display: block !important;
+          max-width: 100% !important;
+          width: 100% !important;
+        }
+
+        /* ── Base card (light) ── */
+        .base-card {
+          display: block !important;
+          box-shadow: none !important;
+          border: 1px solid #ddd !important;
+          margin: 0 0 12px !important;
+          padding: 20px 24px !important;
+          page-break-inside: avoid;
+          background: #fafafa !important;
+        }
+
+        .base-lbl {
+          color: #555 !important;
+        }
+        .base-val {
+          color: #111 !important;
+        }
+        .base-val.accent {
+          color: #c8492a !important;
+        }
+        .base-val.green {
+          color: #3a7d5c !important;
+        }
+        .base-val.muted {
+          color: #888 !important;
+        }
+
+        .chips-row {
+          background: #eee !important;
+        }
+        .chip-box {
+          background: #f4f4f4 !important;
+        }
+        .chip-label {
+          color: #777 !important;
+        }
+        .chip-value {
+          color: #111 !important;
+        }
+
+        /* ── Result card (dark → light) ── */
+        .result-card {
+          display: block !important;
+          box-shadow: none !important;
+          border: 1px solid #ddd !important;
+          margin: 0 0 24px !important;
+          padding: 20px 24px !important;
+          page-break-inside: avoid;
+          background: #1a1714 !important; /* mantiene sfondo scuro per leggibilità colori */
+        }
+
+        .result-card::after {
+          display: none !important;
+        }
+
+        /* ── Scadenzario grid ── */
+        .scad-grid {
+          margin-top: 16px !important;
+        }
+
+        /* ── Anno blocks (pluriennale) ── */
+        .yr-block {
+          page-break-before: always;
+          padding-top: 8px;
+        }
+        .yr-block:first-child {
+          page-break-before: auto;
+        }
+        .yr-badge {
+          margin-bottom: 10px !important;
+        }
+
+        /* ── Animazioni off ── */
+        .base-card,
+        .result-card {
+          animation: none !important;
+        }
+      }
+
+      /* ─── EXPORT BTN ─── */
+      .btn-export {
+        margin-top: 24px;
+        background: none;
+        border: 1.5px solid var(--border);
+        color: var(--muted);
+        border-radius: 3px;
+        padding: 12px 24px;
+        font-family: "DM Mono", monospace;
+        font-size: 9px;
+        font-weight: 500;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        cursor: pointer;
+        display: none;
+        align-items: center;
+        gap: 10px;
+        transition: all 0.2s;
+        width: fit-content;
+        align-self: center;
+      }
+      .btn-export:hover {
+        border-color: var(--ink);
+        color: var(--ink);
+      }
+      .btn-export.on {
+        display: inline-flex;
+      }
+
+      @media (max-width: 500px) {
+        .card,
+        .result-card,
+        .base-card {
+          padding-left: 22px;
+          padding-right: 22px;
+        }
+        .tab-btn {
+          font-size: 9px;
+          margin-right: 20px;
+        }
+      }
+
+      .pdf-hidden {
+        display: none !important;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- TAB NAV -->
+    <nav class="tab-nav">
+      <button class="tab-btn active" id="tab1" onclick="setMode(1)">Inserimento manuale</button>
+      <button class="tab-btn" id="tab2" onclick="setMode(2)">Calcolo pluriennale</button>
+    </nav>
+
+    <!-- ══════════════════════════════════════
+     MODALITÀ 1 — MANUALE
+══════════════════════════════════════ -->
+    <div class="m-panel on" id="p1">
+      <header>
+        <p class="eyebrow">Regime Forfettario</p>
+        <h1>Calcolo<br /><em>tasse</em></h1>
+        <p class="subtitle">Imposta sostitutiva, contributi INPS,<br />saldi e acconti per la tua Partita IVA</p>
+      </header>
+
+      <div class="card">
+        <div class="field-group">
+          <div class="field">
+            <label for="i1">Incassi annui</label>
+            <div class="input-row">
+              <input type="number" id="i1" placeholder="24000" min="0" max="85000" step="100" />
+              <span class="unit">€</span>
+            </div>
+          </div>
+          <div class="field">
+            <label for="c1">Coefficiente</label>
+            <div class="input-row">
+              <input type="number" id="c1" placeholder="67" min="1" max="100" step="0.01" value="67" />
+              <span class="unit">%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Aliquota imposta sostitutiva</label>
+          <div class="toggle-group">
+            <button class="toggle-btn active" id="a1_5_btn" onclick="setAliq(1, 5)">5%</button>
+            <button class="toggle-btn" id="a1_15_btn" onclick="setAliq(1, 15)">15%</button>
+          </div>
+        </div>
+
+        <div class="sub-label">
+          Anno precedente
+          <span class="sub-note">— lascia vuoto se è il primo anno</span>
+        </div>
+
+        <div class="field-group">
+          <div class="field">
+            <label for="ip1">Contributi INPS versati</label>
+            <div class="input-row">
+              <input type="number" id="ip1" placeholder="0" min="0" step="0.01" />
+              <span class="unit">€</span>
+            </div>
+          </div>
+          <div class="field">
+            <label for="ai1">Acconti imposta sost.</label>
+            <div class="input-row">
+              <input type="number" id="ai1" placeholder="0" min="0" step="0.01" />
+              <span class="unit">€</span>
+            </div>
+          </div>
+          <div class="field">
+            <label for="an1">Acconti INPS</label>
+            <div class="input-row">
+              <input type="number" id="an1" placeholder="0" min="0" step="0.01" />
+              <span class="unit">€</span>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn-calc" onclick="calcM1()">Calcola <span class="btn-calc-arrow">→</span></button>
+        <div class="err" id="e1">Gli incassi superano la soglia di <strong>€85.000</strong>. Non è possibile applicare il regime forfettario.</div>
+      </div>
+
+      <!-- BASE CALC -->
+      <div class="base-card" id="r1_base"></div>
+
+      <!-- PAYMENTS -->
+      <div class="result-card" id="r1_pay"></div>
+      <button class="btn-export" id="eb1" onclick="exportPDF()">Scarica report PDF</button>
+    </div>
+    <!-- /p1 -->
+
+    <!-- ══════════════════════════════════════
+     MODALITÀ 2 — PLURIENNALE
+══════════════════════════════════════ -->
+    <div class="m-panel" id="p2">
+      <header>
+        <p class="eyebrow">Regime Forfettario</p>
+        <h1>Calcolo<br /><em>pluriennale</em></h1>
+        <p class="subtitle">Inserisci i fatturati anno per anno<br />e il tool calcola acconti e saldi automaticamente</p>
+      </header>
+
+      <div class="card">
+        <div class="field-group">
+          <div class="field">
+            <label for="c2">Coefficiente</label>
+            <div class="input-row">
+              <input type="number" id="c2" placeholder="67" min="1" max="100" step="0.01" value="67" />
+              <span class="unit">%</span>
+            </div>
+          </div>
+          <div class="field">
+            <label for="y0">Anno di inizio</label>
+            <div class="input-row">
+              <input type="number" id="y0" placeholder="2024" min="2000" max="2040" />
+              <span class="unit"></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Aliquota imposta sostitutiva</label>
+          <div class="toggle-group">
+            <button class="toggle-btn active" id="a2_5_btn" onclick="setAliq(2, 5)">5%</button>
+            <button class="toggle-btn" id="a2_15_btn" onclick="setAliq(2, 15)">15%</button>
+          </div>
+        </div>
+
+        <div class="sub-label">
+          INPS anno precedente al primo
+          <span class="sub-note">— per imponibile netto corretto</span>
+        </div>
+
+        <div class="field">
+          <label for="ip2">Contributi INPS anno prec.</label>
+          <div class="input-row">
+            <input type="number" id="ip2" placeholder="0" min="0" step="0.01" />
+            <span class="unit">€</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top: 12px">
+        <p style="font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); margin-bottom: 20px">Incassi per anno</p>
+        <div class="year-rows" id="yrows"></div>
+        <button class="btn-add" onclick="addRow()">Aggiungi anno</button>
+
+        <button class="btn-calc" onclick="calcM2()" style="margin-top: 8px">Calcola tutti gli anni <span class="btn-calc-arrow">→</span></button>
+        <div class="err" id="e2"><span id="e2msg">Un anno supera la soglia di €85.000.</span></div>
+      </div>
+
+      <div id="r2"></div>
+      <button class="btn-export" id="eb2" onclick="exportPDF()">Scarica report PDF</button>
+    </div>
+    <!-- /p2 -->
+
+    <p class="note">
+      Calcolatore orientativo · Non sostituisce la consulenza di un commercialista<br />
+      INPS Gestione Separata 26,07% · Acconti imposta 50%+50% · Acconti INPS 40%+40%
+    </p>
+
+    <script>
+      /* ─── CONSTANTS ─── */
+      const INPS_RATE = 0.2607;
+      const IMP_A1 = 0.5,
+        IMP_A2 = 0.5;
+      const INP_A1 = 0.4,
+        INP_A2 = 0.4;
+
+      /* ─── EXPORT PDF ─── */
+      function exportPDF() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+
+        let yPos = 20;
+
+        // Titolo del documento
+        doc.setFontSize(16);
+        doc.setTextColor(26, 23, 20); // Colore ink
+        doc.text("Report Calcolo Regime Forfettario", 14, yPos);
+        yPos += 12;
+
+        // Capiamo quale pannello è attivo
+        const isMode1 = document.getElementById("p1").classList.contains("on");
+        const activePanel = document.getElementById(isMode1 ? "p1" : "p2");
+
+        // Raccogliamo tutte le card dei risultati generate
+        const baseCards = activePanel.querySelectorAll(".base-card.visible");
+        const resultCards = activePanel.querySelectorAll(".result-card.visible");
+
+        for (let i = 0; i < baseCards.length; i++) {
+          const baseCard = baseCards[i];
+          const resultCard = resultCards[i];
+
+          // Cerca l'etichetta dell'anno (se presente nel pluriennale)
+          let titoloBlocco = isMode1 ? "Dettaglio Calcolo Attuale" : "Dettaglio Calcolo";
+          const badge = baseCard.parentElement.querySelector(".yr-badge");
+          if (badge) {
+            titoloBlocco = badge.innerText.replace("\n", " ");
+          }
+
+          // Intestazione anno/blocco
+          doc.setFontSize(12);
+          doc.setTextColor(200, 73, 42); // Colore accent
+          doc.text(titoloBlocco, 14, yPos);
+          yPos += 6;
+
+          // ── Estrazione "Base di calcolo" ──
+          const baseRows = baseCard.querySelectorAll(".base-row");
+          const baseData = Array.from(baseRows).map((row) => {
+            // Unisce la label principale e la small tag con un trattino
+            const lbl = row.querySelector(".base-lbl").innerText.replace(/\n/g, ": ").replace(/−/g, "-");
+            const val = row.querySelector(".base-val").innerText;
+            return [lbl, val];
+          });
+
+          doc.autoTable({
+            startY: yPos,
+            head: [["Base di calcolo", "Importo"]],
+            body: baseData,
+            theme: "grid",
+            headStyles: { fillColor: [26, 23, 20] },
+            margin: { left: 14, right: 14 },
+          });
+          yPos = doc.lastAutoTable.finalY + 10;
+
+          // ── Estrazione "Pagamenti" ──
+          if (resultCard) {
+            const resRows = resultCard.querySelectorAll(".r-row");
+            const resData = Array.from(resRows).map((row) => {
+              const lbl = row.querySelector(".r-lbl").innerText.replace(/\n/g, ". ");
+              const val = row.querySelector(".r-val").innerText.replace(/−/g, "-");
+
+              return [lbl, val];
+            });
+
+            // Aggiungiamo il blocco totale
+            const totBlock = resultCard.querySelector(".total-block");
+            if (totBlock) {
+              const totLbl = totBlock.querySelector(".total-block-lbl").innerText.replace(/\n/g, " - ");
+              const totVal = totBlock.querySelector(".total-block-val").innerText;
+              resData.push([
+                { content: totLbl, styles: { fontStyle: "bold" } },
+                { content: totVal, styles: { fontStyle: "bold" } },
+              ]);
+            }
+
+            doc.autoTable({
+              startY: yPos,
+              head: [["Dettaglio Pagamenti", "Importo"]],
+              body: resData,
+              theme: "grid",
+              headStyles: { fillColor: [200, 73, 42] },
+              margin: { left: 14, right: 14 },
+            });
+            yPos = doc.lastAutoTable.finalY + 10;
+
+            // ── Estrazione "Scadenzario" ──
+            const scadCols = resultCard.querySelectorAll(".scad-col");
+            if (scadCols.length > 0) {
+              let scadData = [];
+              scadCols.forEach((col) => {
+                const date = col.querySelector(".scad-date").innerText.replace(/\n/g, " ");
+
+                scadData.push([{ content: date, colSpan: 2, styles: { fontStyle: "bold", fillColor: [245, 242, 235] } }]);
+
+                const rows = col.querySelectorAll(".scad-r");
+                rows.forEach((r) => {
+                  scadData.push([r.querySelector(".scad-name").innerText, r.querySelector(".scad-amt").innerText]);
+                });
+
+                const tot = col.querySelector(".scad-tot");
+                if (tot) {
+                  scadData.push([
+                    { content: "Totale Scadenza", styles: { fontStyle: "bold" } },
+                    { content: tot.querySelector(".scad-tot-amt").innerText, styles: { fontStyle: "bold" } },
+                  ]);
+                }
+              });
+
+              doc.autoTable({
+                startY: yPos,
+                head: [["Scadenze e Versamenti", "Importo"]],
+                body: scadData,
+                theme: "grid",
+                headStyles: { fillColor: [58, 125, 92] }, // Colore verde
+                margin: { left: 14, right: 14 },
+              });
+              yPos = doc.lastAutoTable.finalY + 20;
+            }
+          }
+
+          // Salto pagina se ci sono più anni e lo spazio scarseggia
+          if (i < baseCards.length - 1 && yPos > 220) {
+            doc.addPage();
+            yPos = 20;
+          }
+        }
+
+        // Nome del file generato
+        doc.save("Calcolo_Forfettario.pdf");
+      }
+
+      /* ─── FORMAT ─── */
+      const E = (n) => "€\u00A0" + n.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const Es = (n) => "€\u00A0" + n.toLocaleString("it-IT", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+      const P = (n) => n.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "%";
+
+      /* ─── MODE ─── */
+      function setMode(m) {
+        [1, 2].forEach((n) => {
+          document.getElementById("p" + n).classList.toggle("on", n === m);
+          document.getElementById("tab" + n).classList.toggle("active", n === m);
+        });
+      }
+
+      /* ─── ALIQUOTA STATE ─── */
+      const aliqState = { 1: 5, 2: 5 };
+      function setAliq(mode, v) {
+        aliqState[mode] = v;
+        document.getElementById("a" + mode + "_5_btn").classList.toggle("active", v === 5);
+        document.getElementById("a" + mode + "_15_btn").classList.toggle("active", v === 15);
+      }
+
+      /* ─── CORE CALC ─── */
+      function calc(inc, coeff, ali, prevInps) {
+        const reddito = inc * coeff;
+        const inps = reddito * INPS_RATE;
+        const netto = reddito - prevInps;
+        const tax = Math.max(0, netto) * ali;
+        return { inc, coeff, ali, reddito, inps, netto, tax, prevInps };
+      }
+
+      /* ─── RENDER HELPERS ─── */
+      const BR = (lbl, sub, val, cls = "") =>
+        `<div class="base-row"><div class="base-lbl">${lbl}${sub ? `<small>${sub}</small>` : ""}</div><div class="base-val ${cls}">${val}</div></div>`;
+      const BRS = (lbl, sub, val, cls = "muted") =>
+        `<div class="base-row sub"><div class="base-lbl">${lbl}${sub ? `<small>${sub}</small>` : ""}</div><div class="base-val ${cls}">${val}</div></div>`;
+      const RR = (lbl, sub, val, cls = "") =>
+        `<div class="r-row"><div class="r-lbl">${lbl}${sub ? `<small>${sub}</small>` : ""}</div><div class="r-val ${cls}">${val}</div></div>`;
+      const RRS = (lbl, sub, val, cls = "small") =>
+        `<div class="r-row sub"><div class="r-lbl">${lbl}${sub ? `<small>${sub}</small>` : ""}</div><div class="r-val ${cls}">${val}</div></div>`;
+
+      function renderBase(d, annoX) {
+        return `
+  <div class="base-card visible">
+    <p style="font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);margin-bottom:20px;">Base di calcolo — ${annoX}</p>
+    ${BR("Incassi annui", "", E(d.inc))}
+    ${BR("Reddito lordo", `Incassi × ${P(d.coeff * 100)}`, E(d.reddito))}
+    ${BR("Contributi INPS", "Reddito lordo × 26,07%", E(d.inps), "green")}
+    ${
+      d.prevInps > 0
+        ? BR("Imponibile netto", `Reddito lordo − INPS ${parseInt(annoX) - 1} (${E(d.prevInps)})`, E(d.netto))
+        : BR("Imponibile netto", "Reddito lordo (nessun INPS prec.)", E(d.netto))
+    }
+    ${BR("Imposta sostitutiva", `Imponibile netto × ${P(d.ali * 100)}`, E(d.tax), "accent")}
+    <div class="chips-row">
+      <div class="chip-box">
+        <span class="chip-label">Netto stimato</span>
+        <span class="chip-value">${E(d.inc - d.tax - d.inps)}</span>
+      </div>
+      <div class="chip-box">
+        <span class="chip-label">Incidenza su incassi</span>
+        <span class="chip-value">${P(((d.tax + d.inps) / d.inc) * 100)}</span>
+      </div>
+    </div>
+  </div>`;
+      }
+
+      function renderPayments(d, annoX, accImpPaid, accInpsPaid, annoXp1) {
+        const saldoImp = d.tax - accImpPaid;
+        const saldoInps = d.inps - accInpsPaid;
+        const a1imp = d.tax * IMP_A1,
+          a2imp = d.tax * IMP_A2;
+        const a1inps = d.inps * INP_A1,
+          a2inps = d.inps * INP_A2;
+        const totale = Math.max(0, saldoImp) + Math.max(0, saldoInps) + a1imp + a2imp + a1inps + a2inps;
+        const nx = annoXp1 || parseInt(annoX) + 1;
+
+        return `
+  <div class="result-card visible">
+    <p class="result-eyebrow">Pagamenti anno ${annoX}</p>
+
+    <div class="result-section">
+      <p class="result-section-title">Imposta sostitutiva</p>
+      ${RR("Imposta totale anno", "", E(d.tax))}
+      ${accImpPaid > 0 ? RRS("Acconti già versati", `Anno ${parseInt(annoX) - 1}`, `− ${E(accImpPaid)}`, "neg") : ""}
+      ${RR("Saldo imposta sostitutiva", `Entro 30 giugno ${nx}`, E(Math.max(0, saldoImp)))}
+      ${RRS(`1° acconto ${nx} — 50%`, `Entro 30 giugno ${nx}`, E(a1imp))}
+      ${RRS(`2° acconto ${nx} — 50%`, `Entro 30 novembre ${nx}`, E(a2imp))}
+    </div>
+
+    <div class="result-section">
+      <p class="result-section-title">Contributi INPS</p>
+      ${RR("INPS totale anno", "", E(d.inps), "green")}
+      ${accInpsPaid > 0 ? RRS("Acconti già versati", `Anno ${parseInt(annoX) - 1}`, `− ${E(accInpsPaid)}`, "neg") : ""}
+      ${RR("Saldo INPS", `Entro 30 giugno ${nx}`, E(Math.max(0, saldoInps)), "green")}
+      ${RRS(`1° acconto ${nx} — 40%`, `Entro 30 giugno ${nx}`, E(a1inps))}
+      ${RRS(`2° acconto ${nx} — 40%`, `Entro 30 novembre ${nx}`, E(a2inps))}
+    </div>
+
+    <div class="total-block">
+      <div class="total-block-lbl">
+        Totale versamenti ${annoX}
+        <small>Saldi + acconti per ${nx}</small>
+      </div>
+      <div class="total-block-val">${E(totale)}</div>
+    </div>
+
+    <div class="scad-grid">
+      <div class="scad-col">
+        <div class="scad-date">30 Giugno <em>${nx}</em></div>
+        <div class="scad-r"><span class="scad-name">Saldo imposta sost.</span><span class="scad-amt">${E(Math.max(0, saldoImp))}</span></div>
+        <div class="scad-r"><span class="scad-name">1° acc. imposta 50%</span><span class="scad-amt">${E(a1imp)}</span></div>
+        <div class="scad-r"><span class="scad-name">Saldo INPS</span><span class="scad-amt">${E(Math.max(0, saldoInps))}</span></div>
+        <div class="scad-r"><span class="scad-name">1° acc. INPS 40%</span><span class="scad-amt">${E(a1inps)}</span></div>
+        <div class="scad-tot"><span>Totale</span><span class="scad-tot-amt">${E(Math.max(0, saldoImp) + a1imp + Math.max(0, saldoInps) + a1inps)}</span></div>
+      </div>
+      <div class="scad-col">
+        <div class="scad-date">30 Novembre <em>${nx}</em></div>
+        <div class="scad-r"><span class="scad-name">2° acc. imposta 50%</span><span class="scad-amt">${E(a2imp)}</span></div>
+        <div class="scad-r"><span class="scad-name">2° acc. INPS 40%</span><span class="scad-amt">${E(a2inps)}</span></div>
+        <div class="scad-tot"><span>Totale</span><span class="scad-tot-amt">${E(a2imp + a2inps)}</span></div>
+      </div>
+    </div>
+  </div>`;
+      }
+
+      /* ─── CALC M1 ─── */
+      function calcM1() {
+        const inc = parseFloat(document.getElementById("i1").value) || 0;
+        const co = parseFloat(document.getElementById("c1").value);
+        const ali = aliqState[1] / 100;
+        const ip = parseFloat(document.getElementById("ip1").value) || 0;
+        const ai = parseFloat(document.getElementById("ai1").value) || 0;
+        const an = parseFloat(document.getElementById("an1").value) || 0;
+        document.getElementById("e1").classList.remove("on");
+        if (!inc || inc <= 0) {
+          alert("Inserisci gli incassi.");
+          return;
+        }
+        if (!co || co <= 0 || co > 100) {
+          alert("Inserisci un coefficiente valido.");
+          return;
+        }
+        if (inc > 85000) {
+          document.getElementById("e1").classList.add("on");
+          return;
+        }
+
+        const d = calc(inc, co / 100, ali, ip);
+        const anno = new Date().getFullYear();
+
+        document.getElementById("r1_base").outerHTML = renderBase(d, anno);
+        document.getElementById("r1_pay").outerHTML = renderPayments(d, anno, ai, an, anno + 1);
+        document.getElementById("eb1").classList.add("on");
+
+        document.getElementById("r1_base").scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+
+      /* ─── YEAR ROWS ─── */
+      let yc = 0;
+      function addRow() {
+        yc++;
+        const base = parseInt(document.getElementById("y0").value) || new Date().getFullYear();
+
+        // 1. Recupera l'ultimo valore inserito (se esiste)
+        const currentRows = document.querySelectorAll("#yrows .yr-row input");
+        let lastValue = "";
+        if (currentRows.length > 0) {
+          lastValue = currentRows[currentRows.length - 1].value;
+        }
+
+        const rowsCount = document.querySelectorAll("#yrows .yr-row").length;
+        const anno = base + rowsCount;
+
+        const d = document.createElement("div");
+        d.className = "yr-row";
+        d.id = "yr" + yc;
+        d.dataset.idx = yc;
+        d.innerHTML = `
+          <div class="yr-head">
+            <span class="yr-label">Anno <em>${anno}</em></span>
+            ${yc > 1 ? `<button class="btn-rm" onclick="rmRow(${yc})">✕</button>` : ""}
+          </div>
+          <div class="yr-body">
+            <div class="form-group">
+              <label class="field-label" for="yi${yc}">Incassi annui</label>
+              <div class="input-row">
+                <input type="number" id="yi${yc}" placeholder="24000" min="0" max="85000" step="100" value="${lastValue}">
+                <span class="unit">€</span>
+              </div>
+            </div>
+          </div>`;
+        document.getElementById("yrows").appendChild(d);
+      }
+      function rmRow(id) {
+        const e = document.getElementById("yr" + id);
+        if (e) {
+          e.remove();
+          refreshLabels();
+        }
+      }
+      function refreshLabels() {
+        const base = parseInt(document.getElementById("y0").value) || new Date().getFullYear();
+        document.querySelectorAll("#yrows .yr-row").forEach((r, i) => {
+          const em = r.querySelector(".yr-label em");
+          if (em) em.textContent = base + i;
+        });
+      }
+
+      /* ─── CALC M2 ─── */
+      function calcM2() {
+        const co = parseFloat(document.getElementById("c2").value);
+        const ali = aliqState[2] / 100;
+        const base = parseInt(document.getElementById("y0").value) || new Date().getFullYear();
+        const ip0 = parseFloat(document.getElementById("ip2").value) || 0;
+        document.getElementById("e2").classList.remove("on");
+        if (!co || co <= 0 || co > 100) {
+          alert("Inserisci un coefficiente valido.");
+          return;
+        }
+        const rows = document.querySelectorAll("#yrows .yr-row");
+        if (!rows.length) {
+          alert("Aggiungi almeno un anno.");
+          return;
+        }
+        const annos = [];
+        for (let i = 0; i < rows.length; i++) {
+          const id = rows[i].dataset.idx;
+          const inc = parseFloat(document.getElementById("yi" + id).value) || 0;
+          const anno = base + i;
+          if (inc > 85000) {
+            document.getElementById("e2msg").textContent = `Anno ${anno}: incassi (${E(inc)}) superano €85.000.`;
+            document.getElementById("e2").classList.add("on");
+            return;
+          }
+          if (inc <= 0) {
+            alert(`Inserisci gli incassi per l'anno ${anno}.`);
+            return;
+          }
+          annos.push({ anno, inc });
+        }
+
+        let prevInps = ip0,
+          prevTax = 0;
+        let html = "";
+        annos.forEach(({ anno, inc }, i) => {
+          const d = calc(inc, co / 100, ali, prevInps);
+          const accImp = prevTax * (IMP_A1 + IMP_A2);
+          const accInps = (i === 0 ? ip0 : annos[i - 1]._inps) * (INP_A1 + INP_A2);
+          const nx = annos[i + 1] ? annos[i + 1].anno : anno + 1;
+          html += `<div class="yr-block">
+      <div class="yr-badge">Anno <em>${anno}</em></div>
+      ${renderBase(d, anno).replace('class="base-card visible"', 'class="base-card visible" style="margin-top:0"')}
+      ${renderPayments(d, anno, accImp, accInps, nx)}
+    </div>`;
+          annos[i]._inps = d.inps;
+          prevInps = d.inps;
+          prevTax = d.tax;
+        });
+
+        const el = document.getElementById("r2");
+        el.innerHTML = html;
+        document.getElementById("eb2").classList.add("on");
+        setTimeout(() => el.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
+      }
+
+      /* ─── INIT ─── */
+      (function () {
+        document.getElementById("y0").value = new Date().getFullYear();
+        addRow();
+        addRow();
+        document.getElementById("y0").addEventListener("input", refreshLabels);
+        document.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            if (document.getElementById("p1").classList.contains("on")) calcM1();
+            else calcM2();
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,1059 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Finanza Reale</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      :root {
+        --bg: #f5f2eb;
+        --ink: #1a1714;
+        --muted: #8a8070;
+        --accent: #c8492a;
+        --green: #3a7d5c;
+        --border: #d6d0c4;
+      }
+
+      body {
+        background: var(--bg);
+        color: var(--ink);
+        font-family: "DM Mono", monospace;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 0 24px 80px;
+        position: relative;
+        overflow-x: hidden;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+        pointer-events: none;
+        z-index: 999;
+        opacity: 0.5;
+      }
+
+      /* ─── TAB NAV ─── */
+      .tab-nav {
+        width: 100%;
+        max-width: 600px;
+        display: flex;
+        margin: 40px 0 0;
+        border-bottom: 1.5px solid var(--border);
+      }
+
+      .tab-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-family: "DM Mono", monospace;
+        font-size: 10px;
+        font-weight: 500;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: var(--muted);
+        padding: 14px 0;
+        margin-right: 32px;
+        position: relative;
+        transition: color 0.2s;
+        white-space: nowrap;
+      }
+
+      .tab-btn::after {
+        content: "";
+        position: absolute;
+        bottom: -1.5px;
+        left: 0;
+        right: 0;
+        height: 1.5px;
+        background: var(--ink);
+        transform: scaleX(0);
+        transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+
+      .tab-btn.active {
+        color: var(--ink);
+      }
+      .tab-btn.active::after {
+        transform: scaleX(1);
+      }
+
+      /* ─── PAGES ─── */
+      .page {
+        width: 100%;
+        max-width: 600px;
+        display: none;
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .page.active {
+        display: flex;
+      }
+
+      /* ─── HEADER ─── */
+      header {
+        text-align: center;
+        margin: 52px 0 44px;
+        animation: fadeUp 0.7s ease both;
+      }
+
+      .eyebrow {
+        font-size: 10px;
+        font-weight: 500;
+        letter-spacing: 0.25em;
+        text-transform: uppercase;
+        color: var(--accent);
+        margin-bottom: 14px;
+      }
+
+      h1 {
+        font-family: "DM Serif Display", serif;
+        font-size: clamp(2.6rem, 6vw, 4.4rem);
+        line-height: 1;
+        font-weight: 400;
+      }
+
+      h1 em {
+        font-style: italic;
+        color: var(--muted);
+      }
+
+      .subtitle {
+        margin-top: 14px;
+        font-size: 11px;
+        color: var(--muted);
+        letter-spacing: 0.05em;
+        line-height: 1.75;
+      }
+
+      /* ─── CARD ─── */
+      .card {
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 36px 40px;
+        animation: fadeUp 0.7s 0.1s ease both;
+        box-shadow:
+          0 1px 3px rgba(0, 0, 0, 0.04),
+          0 8px 32px rgba(0, 0, 0, 0.04);
+      }
+
+      .field {
+        margin-bottom: 26px;
+      }
+
+      label {
+        display: block;
+        font-size: 10px;
+        font-weight: 500;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 9px;
+      }
+
+      .input-row {
+        display: flex;
+        align-items: center;
+        border-bottom: 1.5px solid var(--ink);
+        transition: border-color 0.2s;
+        padding-bottom: 7px;
+      }
+
+      .input-row:focus-within {
+        border-color: var(--accent);
+      }
+
+      input[type="number"] {
+        flex: 1;
+        background: none;
+        border: none;
+        outline: none;
+        font-family: "DM Serif Display", serif;
+        font-size: 2rem;
+        color: var(--ink);
+        width: 100%;
+        -moz-appearance: textfield;
+      }
+      input[type="number"]::-webkit-outer-spin-button,
+      input[type="number"]::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+      }
+
+      .unit {
+        font-family: "DM Mono", monospace;
+        font-size: 11px;
+        color: var(--muted);
+        letter-spacing: 0.1em;
+        white-space: nowrap;
+        padding-left: 8px;
+      }
+
+      .divider {
+        height: 1px;
+        background: var(--border);
+        margin: 4px 0 26px;
+      }
+
+      /* ─── TOGGLE ─── */
+      .toggle-group {
+        display: inline-flex;
+        border: 1.5px solid var(--border);
+        border-radius: 3px;
+        overflow: hidden;
+      }
+
+      .toggle-btn {
+        background: none;
+        border: none;
+        font-family: "DM Mono", monospace;
+        font-size: 10px;
+        font-weight: 500;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        color: var(--muted);
+        padding: 8px 18px;
+        cursor: pointer;
+        transition:
+          background 0.18s,
+          color 0.18s;
+      }
+
+      .toggle-btn.active {
+        background: var(--ink);
+        color: var(--bg);
+      }
+
+      /* ─── RESULT CARD ─── */
+      .result-card {
+        background: var(--ink);
+        color: var(--bg);
+        border-radius: 4px;
+        padding: 32px 40px;
+        margin-top: 20px;
+        position: relative;
+        overflow: hidden;
+        display: none;
+        animation: fadeUp 0.4s ease both;
+      }
+
+      .result-card.visible {
+        display: block;
+      }
+
+      .result-card::after {
+        content: "";
+        position: absolute;
+        top: -40px;
+        right: -40px;
+        width: 180px;
+        height: 180px;
+        border-radius: 50%;
+        background: var(--accent);
+        opacity: 0.12;
+        pointer-events: none;
+      }
+
+      .result-label {
+        font-size: 10px;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: rgba(245, 242, 235, 0.4);
+        margin-bottom: 8px;
+      }
+
+      .result-big {
+        font-family: "DM Serif Display", serif;
+        font-size: clamp(2.8rem, 8vw, 5rem);
+        line-height: 1;
+        color: #fff;
+        margin-bottom: 4px;
+      }
+
+      .result-big span {
+        color: var(--accent);
+      }
+
+      .result-sub {
+        font-size: 11px;
+        color: rgba(245, 242, 235, 0.45);
+        margin-bottom: 28px;
+        letter-spacing: 0.04em;
+        line-height: 1.65;
+      }
+
+      .result-money-block {
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        padding-top: 24px;
+      }
+
+      .money-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 14px;
+      }
+      .money-row:last-child {
+        margin-bottom: 0;
+      }
+
+      .money-label {
+        font-size: 10px;
+        letter-spacing: 0.13em;
+        text-transform: uppercase;
+        color: rgba(245, 242, 235, 0.38);
+        flex: 1;
+        padding-right: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .money-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+
+      .money-value {
+        font-family: "DM Serif Display", serif;
+        font-size: 1.5rem;
+        color: #fff;
+        white-space: nowrap;
+      }
+
+      .money-value.dimmed {
+        color: rgba(245, 242, 235, 0.3);
+        text-decoration: line-through;
+        font-size: 1.1rem;
+      }
+
+      .money-value.col-green {
+        color: #7ecba1;
+      }
+      .money-value.col-accent {
+        color: #f0a070;
+      }
+      .money-value.col-muted {
+        color: rgba(245, 242, 235, 0.5);
+        font-size: 1.15rem;
+      }
+
+      /* ─── BADGES ─── */
+      .gain-badge,
+      .loss-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        border-radius: 99px;
+        padding: 5px 14px;
+        font-size: 10px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        margin-top: 6px;
+      }
+      .gain-badge {
+        background: rgba(58, 125, 92, 0.2);
+        color: #7ecba1;
+      }
+      .loss-badge {
+        background: rgba(200, 73, 42, 0.15);
+        color: #f0a070;
+      }
+
+      /* ─── PAGE 1 CHART (bars) ─── */
+      .chart-section-p1 {
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 28px 36px 24px;
+        margin-top: 16px;
+        display: none;
+        animation: fadeUp 0.4s ease both;
+      }
+      .chart-section-p1.visible {
+        display: block;
+      }
+
+      .chart-head {
+        font-size: 10px;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 20px;
+      }
+
+      .chart-bars {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .bar-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .bar-year {
+        font-size: 10px;
+        color: var(--muted);
+        width: 52px;
+        flex-shrink: 0;
+        text-align: right;
+      }
+
+      .bar-track {
+        flex: 1;
+        height: 6px;
+        background: var(--border);
+        border-radius: 99px;
+        overflow: hidden;
+      }
+
+      .bar-fill {
+        height: 100%;
+        border-radius: 99px;
+        background: var(--accent);
+        transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+
+      .bar-val {
+        font-size: 10px;
+        color: var(--muted);
+        width: 48px;
+        flex-shrink: 0;
+      }
+
+      /* ─── PAGE 2 CHART (SVG) ─── */
+      .chart-wrap {
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 28px 32px 20px;
+        margin-top: 16px;
+        display: none;
+        animation: fadeUp 0.4s ease both;
+      }
+      .chart-wrap.visible {
+        display: block;
+      }
+
+      .chart-legend {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+      }
+
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 10px;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+      }
+
+      .legend-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+
+      svg.line-chart {
+        width: 100%;
+        height: auto;
+        display: block;
+        overflow: visible;
+      }
+
+      .chart-line {
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      /* ─── NOTE ─── */
+      .note {
+        margin-top: 28px;
+        font-size: 10px;
+        color: var(--muted);
+        text-align: center;
+        letter-spacing: 0.05em;
+        line-height: 1.8;
+        animation: fadeUp 0.7s 0.3s ease both;
+      }
+
+      @keyframes fadeUp {
+        from {
+          opacity: 0;
+          transform: translateY(16px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @media (max-width: 500px) {
+        .card,
+        .result-card,
+        .chart-wrap,
+        .chart-section-p1 {
+          padding-left: 22px;
+          padding-right: 22px;
+        }
+        .tab-btn {
+          font-size: 9px;
+          margin-right: 20px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ─── TAB NAVIGATION ─── -->
+    <nav class="tab-nav">
+      <button class="tab-btn active" onclick="switchTab('p1', this)">Potere d'Acquisto</button>
+      <button class="tab-btn" onclick="switchTab('p2', this)">Piano di Accumulo</button>
+    </nav>
+
+    <!-- ═══════════════════════════════════════════════
+     PAGE 1 — POTERE D'ACQUISTO (invariata)
+═══════════════════════════════════════════════ -->
+    <div class="page active" id="p1">
+      <header>
+        <p class="eyebrow">Calcolatore</p>
+        <h1>Potere<br /><em>d'Acquisto</em></h1>
+        <p class="subtitle">Scopri quanto valgono davvero i tuoi soldi nel tempo</p>
+      </header>
+
+      <div class="card">
+        <div class="field">
+          <label>Tasso di inflazione annua</label>
+          <div class="input-row">
+            <input type="number" id="inflation" placeholder="2" min="0" max="100" step="0.1" />
+            <span class="unit">% / anno</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Orizzonte temporale</label>
+          <div class="input-row">
+            <input type="number" id="years" placeholder="10" min="1" max="100" step="1" />
+            <span class="unit">anni</span>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="field" style="margin-bottom: 0">
+          <label>Capitale iniziale <span style="opacity: 0.5">(opzionale)</span></label>
+          <div class="input-row">
+            <input type="number" id="capital" placeholder="10000" min="0" step="100" />
+            <span class="unit">€</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="result-card" id="resultCard">
+        <p class="result-label">Perdita di potere d'acquisto</p>
+        <div class="result-big" id="lossPercent">—<span>%</span></div>
+        <p class="result-sub" id="resultSub"></p>
+        <div class="result-money-block" id="moneyBlock" style="display: none">
+          <div class="money-row">
+            <span class="money-label">Valore oggi</span>
+            <span class="money-value dimmed" id="moneyToday">—</span>
+          </div>
+          <div class="money-row">
+            <span class="money-label">Valore reale tra <span id="moneyYears">—</span> anni</span>
+            <span class="money-value col-accent" id="moneyFuture">—</span>
+          </div>
+          <div class="money-row">
+            <span class="money-label">Erosione nominale</span>
+            <span class="money-value col-muted" id="moneyLost">—</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="chart-section-p1" id="chartSection">
+        <p class="chart-head">Valore reale nel tempo (€ equivalenti oggi)</p>
+        <div class="chart-bars" id="chartBars"></div>
+      </div>
+
+      <p class="note">
+        Formula: V<sub>t</sub> = V<sub>0</sub> × (1 + i)<sup>−t</sup><br />
+        I risultati sono indicativi e non costituiscono consulenza finanziaria.
+      </p>
+    </div>
+    <!-- /p1 -->
+
+    <!-- ═══════════════════════════════════════════════
+     PAGE 2 — PIANO DI ACCUMULO
+═══════════════════════════════════════════════ -->
+    <div class="page" id="p2">
+      <header>
+        <p class="eyebrow">Simulatore</p>
+        <h1>Piano di<br /><em>Accumulo</em></h1>
+        <p class="subtitle">Quanto rende davvero il tuo PAC,<br />tenendo conto dell'inflazione?</p>
+      </header>
+
+      <div class="card">
+        <div class="field" style="margin-bottom: 22px">
+          <label>Frequenza versamento</label>
+          <div class="toggle-group">
+            <button class="toggle-btn active" id="btnMensile" onclick="setPeriod('mensile')">Mensile</button>
+            <button class="toggle-btn" id="btnAnnuale" onclick="setPeriod('annuale')">Annuale</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label id="labelVersamento"
+            >Versamento mensile
+            <span id="labelVersamentoSub" style="opacity: 0.5; text-transform: none; letter-spacing: 0; font-size: 9px">(primo anno)</span></label
+          >
+          <div class="input-row">
+            <input type="number" id="versamento" placeholder="200" min="0" step="10" />
+            <span class="unit">€</span>
+          </div>
+        </div>
+
+        <div class="field" style="margin-bottom: 26px">
+          <label>Versamento rivalutato con inflazione?</label>
+          <div class="toggle-group">
+            <button class="toggle-btn" id="btnNoGrow" onclick="setGrow(false)">No, fisso</button>
+            <button class="toggle-btn active" id="btnGrow" onclick="setGrow(true)">Sì, rivalutato</button>
+          </div>
+          <p id="growNote" style="margin-top: 10px; font-size: 10px; color: var(--muted); line-height: 1.65">
+            Il versamento aumenta ogni anno del tasso d'inflazione — stesso sacrificio reale nel tempo.
+          </p>
+        </div>
+
+        <div class="field">
+          <label>Rendimento atteso annuo</label>
+          <div class="input-row">
+            <input type="number" id="rendimento" placeholder="7" min="0" max="100" step="0.1" />
+            <span class="unit">% / anno</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Tasso di inflazione annua</label>
+          <div class="input-row">
+            <input type="number" id="infPac" placeholder="2" min="0" max="100" step="0.1" />
+            <span class="unit">% / anno</span>
+          </div>
+        </div>
+
+        <div class="field" style="margin-bottom: 0">
+          <label>Durata del piano</label>
+          <div class="input-row">
+            <input type="number" id="durPac" placeholder="20" min="1" max="60" step="1" />
+            <span class="unit">anni</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- RISULTATI PAC -->
+      <div class="result-card" id="pacResult">
+        <p class="result-label">Capitale nominale finale</p>
+        <div class="result-big" id="pacNominale">—</div>
+        <p class="result-sub" id="pacSub"></p>
+
+        <div class="result-money-block">
+          <div class="money-row">
+            <span class="money-label">
+              <span class="money-dot" style="background: #7ecba1"></span>
+              Capitale reale (potere d'acquisto oggi)
+            </span>
+            <span class="money-value col-green" id="pacReale">—</span>
+          </div>
+          <div class="money-row">
+            <span class="money-label">
+              <span class="money-dot" style="background: rgba(245, 242, 235, 0.25)"></span>
+              Versato totale
+            </span>
+            <span class="money-value" id="pacVersato" style="color: rgba(245, 242, 235, 0.55); font-size: 1.35rem">—</span>
+          </div>
+          <div class="money-row">
+            <span class="money-label">
+              <span class="money-dot" style="background: #888"></span>
+              Valore reale del versato (senza investire)
+            </span>
+            <span class="money-value col-muted" id="pacLiq">—</span>
+          </div>
+          <div id="pacBadge"></div>
+        </div>
+      </div>
+
+      <!-- GRAFICO PAC -->
+      <div class="chart-wrap" id="pacChart">
+        <p class="chart-head">Andamento del capitale nel tempo</p>
+        <div class="chart-legend">
+          <div class="legend-item">
+            <div class="legend-dot" style="background: #1a1714"></div>
+            Nominale (investito)
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background: #3a7d5c"></div>
+            Reale (deflazionato)
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background: #b8b0a4"></div>
+            Liquidità ferma
+          </div>
+        </div>
+        <svg class="line-chart" id="pacSvg" viewBox="0 0 520 230" preserveAspectRatio="xMidYMid meet"></svg>
+      </div>
+
+      <p class="note">
+        Rendimento composto con versamenti periodici · Il valore reale è deflazionato per l'inflazione<br />
+        I risultati sono indicativi e non costituiscono consulenza finanziaria.
+      </p>
+    </div>
+    <!-- /p2 -->
+
+    <script>
+      /* ── UTILS ── */
+      const fmt = (n) => new Intl.NumberFormat("it-IT", { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n);
+      const fmtD = (n, d = 1) => new Intl.NumberFormat("it-IT", { minimumFractionDigits: d, maximumFractionDigits: d }).format(n);
+
+      /* ── TAB SWITCH ── */
+      function switchTab(id, btn) {
+        document.querySelectorAll(".page").forEach((p) => p.classList.remove("active"));
+        document.querySelectorAll(".tab-btn").forEach((b) => b.classList.remove("active"));
+        document.getElementById(id).classList.add("active");
+        btn.classList.add("active");
+      }
+
+      /* ═══════════════════════════════
+   PAGE 1 — POTERE D'ACQUISTO
+═══════════════════════════════ */
+      function calcP1() {
+        const inflation = parseFloat(document.getElementById("inflation").value);
+        const years = parseInt(document.getElementById("years").value);
+        const capital = parseFloat(document.getElementById("capital").value);
+
+        const rc = document.getElementById("resultCard");
+        const cs = document.getElementById("chartSection");
+
+        if (isNaN(inflation) || isNaN(years) || inflation < 0 || years < 1) {
+          rc.classList.remove("visible");
+          cs.classList.remove("visible");
+          return;
+        }
+
+        const factor = Math.pow(1 + inflation / 100, years);
+        const realVal = 1 / factor;
+        const lossPerc = (1 - realVal) * 100;
+
+        document.getElementById("lossPercent").innerHTML = fmtD(lossPerc) + "<span>%</span>";
+        document.getElementById("resultSub").textContent =
+          `Con inflazione al ${fmtD(inflation)}% annuo, dopo ${years} ann${years === 1 ? "o" : "i"} ogni euro vale ${fmtD(realVal * 100, 1)} centesimi in termini reali.`;
+        rc.classList.add("visible");
+
+        const mb = document.getElementById("moneyBlock");
+        if (!isNaN(capital) && capital > 0) {
+          const futureReal = capital / factor;
+          document.getElementById("moneyToday").textContent = "€ " + fmt(capital);
+          document.getElementById("moneyFuture").textContent = "€ " + fmt(futureReal);
+          document.getElementById("moneyLost").textContent = "− € " + fmt(capital - futureReal);
+          document.getElementById("moneyYears").textContent = years;
+          mb.style.display = "block";
+        } else {
+          mb.style.display = "none";
+        }
+
+        buildBars(inflation, years, capital);
+      }
+
+      function buildBars(inflation, years, capital) {
+        const cs = document.getElementById("chartSection");
+        const container = document.getElementById("chartBars");
+        container.innerHTML = "";
+
+        const steps = Math.min(years, 12);
+        const interval = Math.max(1, Math.round(years / steps));
+        const base = isNaN(capital) || capital <= 0 ? 100 : capital;
+
+        const checkpoints = [];
+        for (let y = interval; y < years; y += interval) checkpoints.push(y);
+        checkpoints.push(years);
+
+        checkpoints.forEach((y) => {
+          const v = base / Math.pow(1 + inflation / 100, y);
+          const pct = (v / base) * 100;
+          const row = document.createElement("div");
+          row.className = "bar-row";
+          row.innerHTML = `
+      <span class="bar-year">Anno ${y}</span>
+      <div class="bar-track"><div class="bar-fill" style="width:0%" data-w="${pct.toFixed(1)}"></div></div>
+      <span class="bar-val">${fmtD(pct)}%</span>`;
+          container.appendChild(row);
+        });
+
+        cs.classList.add("visible");
+        requestAnimationFrame(() =>
+          requestAnimationFrame(() => {
+            container.querySelectorAll(".bar-fill").forEach((b) => {
+              b.style.width = b.dataset.w + "%";
+              b.style.opacity = Math.max(0.25, parseFloat(b.dataset.w) / 100);
+            });
+          }),
+        );
+      }
+
+      ["inflation", "years", "capital"].forEach((id) => document.getElementById(id).addEventListener("input", calcP1));
+
+      /* ═══════════════════════════════
+   PAGE 2 — PIANO DI ACCUMULO
+═══════════════════════════════ */
+      let period = "mensile";
+      let growMode = true;
+
+      function setPeriod(p) {
+        period = p;
+        document.getElementById("btnMensile").classList.toggle("active", p === "mensile");
+        document.getElementById("btnAnnuale").classList.toggle("active", p === "annuale");
+        document.getElementById("labelVersamento").textContent = p === "mensile" ? "Versamento mensile" : "Versamento annuale";
+        calcPAC();
+      }
+
+      function setGrow(v) {
+        growMode = v;
+        document.getElementById("btnGrow").classList.toggle("active", v);
+        document.getElementById("btnNoGrow").classList.toggle("active", !v);
+        const sub = document.getElementById("labelVersamentoSub");
+        const note = document.getElementById("growNote");
+        if (v) {
+          sub.textContent = "(primo anno)";
+          note.textContent = "Il versamento aumenta ogni anno del tasso d'inflazione — stesso sacrificio reale nel tempo.";
+          note.style.display = "block";
+        } else {
+          sub.textContent = "";
+          note.style.display = "none";
+        }
+        calcPAC();
+      }
+
+      /* Future Value of an ordinary annuity */
+      function fvAnnuity(pmt, r, n) {
+        if (r === 0) return pmt * n;
+        return (pmt * (Math.pow(1 + r, n) - 1)) / r;
+      }
+
+      /* Future Value of a growing annuity: versamento cresce del g% ogni periodo */
+      function fvGrowingAnnuity(pmt, r, g, n) {
+        if (Math.abs(r - g) < 1e-10) return pmt * n * Math.pow(1 + r, n - 1); // edge case r=g
+        return (pmt * (Math.pow(1 + r, n) - Math.pow(1 + g, n))) / (r - g);
+      }
+
+      /* Totale effettivamente versato con crescita g per n periodi */
+      function totalVersatoGrowing(pmt, g, n) {
+        if (g === 0) return pmt * n;
+        return (pmt * (Math.pow(1 + g, n) - 1)) / g;
+      }
+
+      function calcPAC() {
+        const versamento = parseFloat(document.getElementById("versamento").value);
+        const rendimento = parseFloat(document.getElementById("rendimento").value);
+        const inflation = parseFloat(document.getElementById("infPac").value);
+        const anni = parseInt(document.getElementById("durPac").value);
+
+        const pr = document.getElementById("pacResult");
+        const pc = document.getElementById("pacChart");
+
+        if (
+          isNaN(versamento) ||
+          isNaN(rendimento) ||
+          isNaN(inflation) ||
+          isNaN(anni) ||
+          versamento <= 0 ||
+          rendimento < 0 ||
+          inflation < 0 ||
+          anni < 1
+        ) {
+          pr.classList.remove("visible");
+          pc.classList.remove("visible");
+          return;
+        }
+
+        let nominalFV, totalVersato;
+        if (period === "mensile") {
+          const r = rendimento / 100 / 12;
+          const n = anni * 12;
+          if (growMode) {
+            // crescita mensile equivalente al tasso annuo d'inflazione
+            const g = Math.pow(1 + inflation / 100, 1 / 12) - 1;
+            nominalFV = fvGrowingAnnuity(versamento, r, g, n);
+            totalVersato = totalVersatoGrowing(versamento, g, n);
+          } else {
+            nominalFV = fvAnnuity(versamento, r, n);
+            totalVersato = versamento * n;
+          }
+        } else {
+          const r = rendimento / 100;
+          if (growMode) {
+            const g = inflation / 100;
+            nominalFV = fvGrowingAnnuity(versamento, r, g, anni);
+            totalVersato = totalVersatoGrowing(versamento, g, anni);
+          } else {
+            nominalFV = fvAnnuity(versamento, r, anni);
+            totalVersato = versamento * anni;
+          }
+        }
+
+        const inflFactor = Math.pow(1 + inflation / 100, anni);
+        const realFV = nominalFV / inflFactor;
+        const liqReal = totalVersato / inflFactor;
+        const guadagnoReale = realFV - totalVersato;
+        const rendimentoReale = rendimento - inflation; // approssimazione
+
+        document.getElementById("pacNominale").textContent = "€ " + fmt(nominalFV);
+        const growDesc = growMode ? `, rivalutato ogni anno del ${fmtD(inflation)}%` : "";
+        document.getElementById("pacSub").textContent =
+          `Versando € ${fmt(versamento)} ${period}${growDesc} per ${anni} ann${anni === 1 ? "o" : "i"} ` +
+          `al ${fmtD(rendimento)}% lordo con inflazione al ${fmtD(inflation)}%.`;
+        document.getElementById("pacReale").textContent = "€ " + fmt(realFV);
+        document.getElementById("pacVersato").textContent = "€ " + fmt(totalVersato);
+        document.getElementById("pacLiq").textContent = "€ " + fmt(liqReal);
+
+        const badge = document.getElementById("pacBadge");
+        if (guadagnoReale >= 0) {
+          badge.innerHTML = `<span class="gain-badge">▲ Guadagno reale &nbsp;€ ${fmt(guadagnoReale)}</span>`;
+        } else {
+          badge.innerHTML = `<span class="loss-badge">▼ Perdita reale &nbsp;€ ${fmt(Math.abs(guadagnoReale))}</span>`;
+        }
+
+        pr.classList.add("visible");
+        buildPacChart(versamento, rendimento, inflation, anni);
+      }
+
+      function buildPacChart(versamento, rendimento, inflation, anni) {
+        const pc = document.getElementById("pacChart");
+        const svg = document.getElementById("pacSvg");
+
+        // Compute yearly data
+        const nomSeries = [],
+          realSeries = [],
+          liqSeries = [];
+        for (let y = 0; y <= anni; y++) {
+          let nom, liq;
+          if (period === "mensile") {
+            const r = rendimento / 100 / 12;
+            const n = y * 12;
+            if (growMode) {
+              const g = Math.pow(1 + inflation / 100, 1 / 12) - 1;
+              nom = fvGrowingAnnuity(versamento, r, g, n);
+              liq = totalVersatoGrowing(versamento, g, n);
+            } else {
+              nom = fvAnnuity(versamento, r, n);
+              liq = versamento * n;
+            }
+          } else {
+            const r = rendimento / 100;
+            if (growMode) {
+              const g = inflation / 100;
+              nom = fvGrowingAnnuity(versamento, r, g, y);
+              liq = totalVersatoGrowing(versamento, g, y);
+            } else {
+              nom = fvAnnuity(versamento, r, y);
+              liq = versamento * y;
+            }
+          }
+          const inf = Math.pow(1 + inflation / 100, y);
+          nomSeries.push(nom);
+          realSeries.push(nom / inf);
+          liqSeries.push(liq / inf); // valore reale della liquidità
+        }
+
+        const maxVal = Math.max(...nomSeries, ...realSeries, ...liqSeries, 1);
+        const W = 520,
+          H = 230,
+          PL = 14,
+          PR = 14,
+          PT = 12,
+          PB = 36;
+        const cW = W - PL - PR;
+        const cH = H - PT - PB;
+
+        const xOf = (i) => PL + (i / anni) * cW;
+        const yOf = (v) => PT + cH - (v / maxVal) * cH;
+
+        function makePath(series) {
+          return series.map((v, i) => `${i === 0 ? "M" : "L"}${xOf(i).toFixed(1)},${yOf(v).toFixed(1)}`).join(" ");
+        }
+
+        // Grid lines + Y labels
+        let grids = "";
+        [0.25, 0.5, 0.75, 1.0].forEach((f) => {
+          const gy = (PT + cH - f * cH).toFixed(1);
+          const gv = maxVal * f;
+          grids += `<line x1="${PL}" y1="${gy}" x2="${W - PR}" y2="${gy}" stroke="#EDE9E1" stroke-width="1"/>
+              <text x="${PL + 3}" y="${(parseFloat(gy) - 5).toFixed(1)}" font-family="DM Mono,monospace" font-size="8.5" fill="#A89E90">€${fmt(gv)}</text>`;
+        });
+
+        // X axis labels
+        const steps = Math.min(anni, 8);
+        const interval = Math.max(1, Math.round(anni / steps));
+        let xLabels = "";
+        for (let y = 0; y <= anni; y += interval) {
+          const gx = xOf(y).toFixed(1);
+          xLabels += `<line x1="${gx}" y1="${PT + cH}" x2="${gx}" y2="${PT + cH + 5}" stroke="#D6D0C4" stroke-width="1"/>
+                <text x="${gx}" y="${H - 4}" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" fill="#8A8070">${y}</text>`;
+        }
+        if (anni % interval !== 0) {
+          const gx = xOf(anni).toFixed(1);
+          xLabels += `<line x1="${gx}" y1="${PT + cH}" x2="${gx}" y2="${PT + cH + 5}" stroke="#D6D0C4" stroke-width="1"/>
+                <text x="${gx}" y="${H - 4}" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" fill="#8A8070">${anni}</text>`;
+        }
+
+        // Filled areas (subtle)
+        const nomPath = makePath(nomSeries);
+        const realPath = makePath(realSeries);
+        const liqPath = makePath(liqSeries);
+
+        // Area fills
+        const baseY = (PT + cH).toFixed(1);
+        const nomArea = `${nomPath} L${xOf(anni).toFixed(1)},${baseY} L${xOf(0).toFixed(1)},${baseY} Z`;
+        const realArea = `${realPath} L${xOf(anni).toFixed(1)},${baseY} L${xOf(0).toFixed(1)},${baseY} Z`;
+
+        svg.innerHTML = `
+    <defs>
+      <linearGradient id="gNom" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#1A1714" stop-opacity="0.10"/>
+        <stop offset="100%" stop-color="#1A1714" stop-opacity="0"/>
+      </linearGradient>
+      <linearGradient id="gReal" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#3A7D5C" stop-opacity="0.14"/>
+        <stop offset="100%" stop-color="#3A7D5C" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
+    ${grids}
+    ${xLabels}
+    <path d="${nomArea}"  fill="url(#gNom)"  />
+    <path d="${realArea}" fill="url(#gReal)" />
+    <path d="${liqPath}"  class="chart-line" stroke="#C0B8AE" stroke-width="1.5" stroke-dasharray="5 3"/>
+    <path d="${realPath}" class="chart-line" stroke="#3A7D5C" stroke-width="2.5"/>
+    <path d="${nomPath}"  class="chart-line" stroke="#1A1714" stroke-width="2"/>
+  `;
+
+        pc.classList.add("visible");
+      }
+
+      ["versamento", "rendimento", "infPac", "durPac"].forEach((id) => document.getElementById(id).addEventListener("input", calcPAC));
+    </script>
+  </body>
+</html>
