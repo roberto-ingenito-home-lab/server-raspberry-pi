@@ -23,7 +23,7 @@ docker compose restart couchdb-obsidian
 1. Installa il plugin **Self-hosted LiveSync** in Obsidian.
 2. Apri le impostazioni del plugin.
 3. Nella sezione **Remote Configuration**, imposta i seguenti parametri:
-   - **SERVER URI**: `https://roberto-ingenito.ddns.net/couchdb-obsidian/`
+   - **SERVER URI**: `https://obsidian.robertoingenito.com/`
    - **Username**: Il tuo username CouchDB.
    - **Password**: La tua password CouchDB.
    - **Database name**: Inserisci un nome **coerente con il nome del tuo Vault** (es. se il vault si chiama `NotePersonali`, usa `note_personali`). CouchDB richiede nomi in minuscolo.

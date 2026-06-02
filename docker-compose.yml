@@ -116,22 +116,6 @@ services:
       - common-network
     restart: unless-stopped
 
-  # Interfaccia grafica per la gestione dei database Postgres
-  pgadmin:
-    container_name: pgadmin-container
-    image: dpage/pgadmin4
-    restart: always
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@admin.com
-      PGADMIN_DEFAULT_PASSWORD: admin
-    ports:
-      - "5050:80"
-    networks:
-      - common-network
-    depends_on:
-      cashly-database:
-        condition: service_healthy
-
   # --- NEXTCLOUD SERVICES ---
   # Applicazione Nextcloud (Cloud storage)
   nextcloud:
@@ -300,10 +284,14 @@ networks:
 # --- VOLUMES ---
 volumes:
   postgres_data:
+    external: true
     name: cashly-db_postgres_data
   nextcloud_db_data:
+    external: true
     name: nextcloud-db_data
   nextcloud_data:
+    external: true
     name: nextcloud_app_data
   couchdb_obsidian_data:
+    external: true
     name: couchdb_obsidian_data

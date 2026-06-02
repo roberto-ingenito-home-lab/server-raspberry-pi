@@ -38,12 +38,13 @@ Per garantire che i servizi Docker siano sempre accessibili allo stesso indirizz
     sudo netplan apply
     ```
 
-## 🌐 Configurazione DDNS (Dynamic DNS)
+## 🌐 Accesso Remoto e DNS (Cloudflare Tunnel)
 
-Il servizio DDNS (Dynamic Domain Name System) è utilizzato per mappare il tuo IP pubblico dinamico a un nome di dominio fisso, consentendo l'accesso ai servizi dall'esterno della rete domestica.
+L'accesso remoto sicuro ai servizi ospitati sul server avviene tramite **Cloudflare Tunnel** (gestito dal servizio `cloudflared` in Docker).
 
-* **Servizio Utilizzato:** NO-IP
-* **Compatibilità Router:** Configurato direttamente tramite l'interfaccia del router Vodafone (supporto nativo per NO-IP). Non è necessario installare client DDNS sul Raspberry Pi.
+* **Nessun DDNS o Port Forwarding necessario:** Non è più necessario configurare servizi di Dynamic DNS (come NO-IP) o aprire porte sul router domestico (porte 80/443).
+* **Funzionamento:** Il container `cloudflared` stabilisce una connessione sicura in uscita verso la rete di Cloudflare. Il traffico in entrata viene instradato in modo sicuro tramite il tunnel ai singoli servizi in esecuzione nella rete Docker `common-network`.
+* **Configurazione:** Per maggiori informazioni sulla configurazione delle rotte e dei sottodomini, consulta [cloudflare_guide.md](file:///C:/Users/roberto/Documents/GitHub/server-raspberry-pi/cloudflare_guide.md).
 
 ## 🤖 GitHub Actions Self-Hosted Runner
 

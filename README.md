@@ -4,12 +4,12 @@ Collezione di applicazioni e servizi self-hosted, orchestrati tramite Docker su 
 
 ## 🏗️ Architettura
 
-L'infrastruttura usa un reverse proxy centralizzato per routing, SSL e sicurezza.
+L'infrastruttura utilizza Cloudflare Tunnel per il routing sicuro, la gestione del certificato SSL e la sicurezza, eliminando la necessità di porte pubbliche aperte.
 
 | Componente          | Tecnologia                                  |
 | ------------------- | ------------------------------------------- |
-| Reverse Proxy       | Traefik v3                                  |
-| SSL                 | Let's Encrypt via ACME (gestito da Traefik) |
+| Tunnel & DNS        | Cloudflare Tunnel (`cloudflared`)           |
+| SSL                 | Gestito da Cloudflare                       |
 | Database principale | PostgreSQL                                  |
 | Database Obsidian   | CouchDB                                     |
 | Cache               | Redis (Nextcloud)                           |
@@ -73,8 +73,8 @@ Interfaccia web per PostgreSQL → porta `5050` (accesso diretto)
 ### 1. Prerequisiti
 
 - Docker e Docker Compose installati
-- Dominio configurato (es. DDNS su NO-IP)
-- Porte 80 e 443 aperte sul router
+- Dominio configurato su Cloudflare con un Tunnel attivo
+- Variabile `CLOUDFLARE_TUNNEL_TOKEN` configurata nel file `.env`
 
 ### 2. Configurazione ambiente
 
@@ -91,7 +91,7 @@ nano .env
 docker compose up -d
 ```
 
-Traefik ottiene automaticamente i certificati Let's Encrypt al primo avvio.
+Il container `cloudflared` si connetterà automaticamente a Cloudflare, esponendo i servizi configurati in modo sicuro.
 
 **Sviluppo:**
 
@@ -99,28 +99,14 @@ Traefik ottiene automaticamente i certificati Let's Encrypt al primo avvio.
 docker compose --env-file .env.dev up --build -d
 ```
 
-Traefik genera un certificato self-signed automatico. Il browser mostrerà un avviso SSL — normale in locale.
-
 ---
 
 
 ## 🔀 Routing
 
-| Path                    | Servizio               | Note                                  |
-| ----------------------- | ---------------------- | ------------------------------------- |
-| `/`                     | portfolio              |                                       |
-| `/cashly-api/`          | cashly-back-end        | Rate limit: 30 req/min                |
-| `/swagger`              | cashly-back-end        | Rate limit: 10 req/min                |
-| `/cashly/`              | cashly-front-end       |                                       |
-| `/timesheet/`           | fortil-excel-timesheet | Strip prefix                          |
-| `/cloud/`               | nextcloud              | Strip prefix                          |
-| `/mr-white-api/`        | mr-white-back-end      | WebSocket (SignalR)                   |
-| `/mr-white/`            | mr-white-front-end     |                                       |
-| `/couchdb-obsidian/`    | couchdb-obsidian       | Strip prefix, rate limit: 120 req/min |
-| `/calcolatore-finanze/` | static-files           | SPA statica                           |
-| `/calcolatore-tasse/`   | static-files           | SPA statica                           |
+La gestione delle rotte e dei domini non avviene più tramite reverse proxy locale (Traefik), ma è delegata interamente a Cloudflare Tunnel tramite la console web di Cloudflare Zero Trust.
 
-Dashboard Traefik disponibile su `http://localhost:8080` (solo accesso locale).
+Per la mappa completa dei sottodomini e dei relativi servizi Docker interni configurati, consulta il file di documentazione [cloudflare_guide.md](file:///C:/Users/roberto/Documents/GitHub/server-raspberry-pi/cloudflare_guide.md).
 
 ---
 
@@ -144,9 +130,10 @@ docker compose up -d --build [service-name]
 
 ## 📄 Documentazione correlata
 
-- [🛠️ Infrastructure & Host Setup](INFRASTRUCTURE.md)
-- [🐳 Configurazione Docker per il RAID](configurazione_docker.md)
-- [💾 Backup & Restore Postgres](backup_and_restore_postgres.md)
-- [🗄️ Configurazione RAID](configurazione_raid.md)
-- [📝 Obsidian Sync](configurazione_obsidian_sync.md)
-- [🧹 Guida Pulizia e Ottimizzazione WSL2](Docker-WSL2-Optimization-Guide.md)
+- [🛠️ Infrastructure & Host Setup](file:///C:/Users/roberto/Documents/GitHub/server-raspberry-pi/INFRASTRUCTURE.md)
+- [🐳 Configurazione Docker per il RAID](file:///C:/Users/roberto/Documents/GitHub/server-raspberry-pi/configurazione_docker.md)
+- [☁️ Configurazione Cloudflare](file:///C:/Users/roberto/Documents/GitHub/server-raspberry-pi/cloudflare_guide.md)
+- [💾 Backup & Restore Postgres](file:///C:/Users/roberto/Documents/GitHub/server-raspberry-pi/backup_and_restore_postgres.md)
+- [🗄️ Configurazione RAID](file:///C:/Users/roberto/Documents/GitHub/server-raspberry-pi/configurazione_raid.md)
+- [📝 Obsidian Sync](file:///C:/Users/roberto/Documents/GitHub/server-raspberry-pi/configurazione_obsidian_sync.md)
+- [🧹 Guida Pulizia e Ottimizzazione WSL2](file:///C:/Users/roberto/Documents/GitHub/server-raspberry-pi/Docker-WSL2-Optimization-Guide.md)

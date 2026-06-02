@@ -97,7 +97,7 @@ cd /mnt/storage/projects
 docker compose build
 
 # Avvia tutti i servizi in background
-# Traefik si occuperà del routing e della generazione automatica dei certificati SSL via Let's Encrypt
+# Il tunnel Cloudflare (cloudflared) si occuperà del routing sicuro dei sottodomini
 docker compose up -d
 ```
 
