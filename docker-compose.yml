@@ -240,9 +240,9 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:8080
-      - SUPABASE_URL=${LAFA_SUPABASE_URL}
-      - SUPABASE_ANON_KEY=${LAFA_SUPABASE_ANON_KEY}
-      - FRONTEND_ORIGIN=${LAFA_FRONTEND_ORIGIN}
+      - LAFA_SUPABASE_URL=${LAFA_SUPABASE_URL}
+      - LAFA_SUPABASE_ANON_KEY=${LAFA_SUPABASE_ANON_KEY}
+      - LAFA_FRONTEND_ORIGIN=${LAFA_FRONTEND_ORIGIN}
     networks:
       - common-network
     restart: always
