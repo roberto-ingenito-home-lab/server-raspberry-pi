@@ -15,6 +15,8 @@ Configura le seguenti regole di hostname per far corrispondere i sottodomini ai 
 
 | Public Hostname (Sottodominio)    | Path (Opzionale)       | Service Type | URL (Nome Container)                  | Note                       |
 | :-------------------------------- | :--------------------- | :----------- | :------------------------------------ | :------------------------- |
+| `robertoingenito.com`             | `/robots.txt`          | HTTP         | `http://static-files:80`              | Gestione robots.txt (SEO)  |
+| `robertoingenito.com`             | `/sitemap.xml`         | HTTP         | `http://static-files:80`              | Gestione sitemap.xml (SEO) |
 | `robertoingenito.com`             | _Vuoto_                | HTTP         | `http://portfolio-app:80`             | Portfolio Principale       |
 | `cashly.robertoingenito.com`      | `/cashly-api*`         | HTTP         | `http://cashly-back-end:80`           | Backend API di Cashly      |
 | `cashly.robertoingenito.com`      | `/swagger*`            | HTTP         | `http://cashly-back-end:80`           | Documentazione API         |
@@ -33,8 +35,8 @@ Configura le seguenti regole di hostname per far corrispondere i sottodomini ai 
 > **ORDINE DELLE REGISTRAZIONI (ROTTE) SU CLOUDFLARE:**
 > L'ordine con cui le rotte sono posizionate in Cloudflare è fondamentale. Cloudflare valuta le regole dall'alto verso il basso:
 >
-> 1. Le rotte con un percorso specifico (come `/cashly-api*` o `/swagger*`) **devono essere posizionate SOPRA** alla rotta generica con percorso vuoto (`_Vuoto_`).
-> 2. Se la rotta con percorso `_Vuoto_` (che punta al frontend) si trova sopra le altre, Cloudflare catturerà tutto il traffico indirizzato a quel sottodominio e lo invierà al frontend, ignorando le regole successive per le API o Swagger.
+> 1. Le rotte con un percorso specifico (come `/robots.txt`, `/sitemap.xml`, `/cashly-api*` o `/swagger*`) **devono essere posizionate SOPRA** alla rotta generica con percorso vuoto (`Vuoto`).
+> 2. Se la rotta con percorso `Vuoto` (che punta al frontend) si trova sopra le altre, Cloudflare catturerà tutto il traffico indirizzato a quel sottodominio e lo invierà al frontend, ignorando le regole successive per le API, Swagger o i file SEO.
 
 > [!NOTE]
 > Per le regole con path (es. `/cashly-api*`), Cloudflare inoltrerà automaticamente il path al container. Questo mantiene l'API ed il frontend sullo stesso sottodominio, eliminando problemi di CORS.
@@ -50,3 +52,22 @@ Configura le seguenti regole di hostname per far corrispondere i sottodomini ai 
 >      - ~/.docker/config.json:/config.json
 >    ```
 >    In questo modo Watchtower userà automaticamente le tue credenziali per aggiornare le app private!
+
+---
+
+## 📈 Gestione SEO e Google Search Console
+
+Abbiamo configurato il server Nginx in modalità centralizzata per servire i file di indicizzazione SEO esclusivamente per il portfolio principale `robertoingenito.com` ed escludere tutti gli altri sottodomini.
+
+### Struttura dei file sul server
+
+I file SEO si trovano nella cartella `./seos/` del repository:
+
+- **`seos/default/robots.txt`**: File generico che impedisce l'indicizzazione (`Disallow: /`). Viene servito a tutti i sottodomini non configurati espressamente (es. `calcolatori.`, `cashly.`, `cloud.`).
+- **`seos/robertoingenito.com/robots.txt` & `sitemap.xml`**: Permettono l'indicizzazione ed indicano a Googlebot la sitemap del portfolio principale.
+
+### Procedura di attivazione:
+
+1. **Rotte Cloudflare**: Assicurati di configurare le rotte per `/robots.txt` e `/sitemap.xml` di `robertoingenito.com` indirizzandole a `http://static-files:80` (inserendole **in alto** rispetto a quella generica del portfolio).
+2. **Verifica Dominio su GSC**: Aggiungi la proprietà **Dominio** per `robertoingenito.com` in Google Search Console
+3. **Invia la Sitemap**: Nel pannello Search Console di `robertoingenito.com`, vai su **Sitemaps** ed invia l'URL `https://robertoingenito.com/sitemap.xml`.
