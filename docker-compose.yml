@@ -31,6 +31,7 @@ services:
       - ./calcolatore-finanze:/var/www/calcolatore-finanze:ro
       - ./calcolatore-tasse:/var/www/calcolatore-tasse:ro
       - ./static-files/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./seos:/var/www/seos:ro
     networks:
       - common-network
     restart: always
