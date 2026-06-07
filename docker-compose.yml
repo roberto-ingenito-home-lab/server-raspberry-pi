@@ -38,7 +38,7 @@ services:
 
   # --- PORTFOLIO APPLICATION ---
   portfolio:
-    image: ghcr.io/ingenito-roberto/portfolio-app:latest
+    image: ghcr.io/roberto-ingenito-home-lab/portfolio-app:latest
     container_name: portfolio-app
     expose:
       - "80"
@@ -49,7 +49,7 @@ services:
   # --- CASHLY APPLICATION ---
   # Backend .NET Core
   cashly-back-end:
-    image: ghcr.io/ingenito-roberto/cashly-back-end:latest
+    image: ghcr.io/roberto-ingenito-home-lab/cashly-back-end:latest
     container_name: cashly-back-end
     expose:
       - "80"
@@ -96,7 +96,7 @@ services:
 
   # Frontend Angular (nginx)
   cashly-front-end:
-    image: ghcr.io/ingenito-roberto/cashly-front-end:latest
+    image: ghcr.io/roberto-ingenito-home-lab/cashly-front-end:latest
     container_name: cashly-front-end
     expose:
       - "80"
@@ -109,7 +109,7 @@ services:
   # --- ADDITIONAL APPS ---
   # Servizio Timesheet
   fortil-excel-timesheet:
-    image: ghcr.io/ingenito-roberto/fortil-excel-timesheet:latest
+    image: ghcr.io/roberto-ingenito-home-lab/fortil-excel-timesheet:latest
     container_name: fortil-excel-timesheet-app
     expose:
       - "3000"
@@ -206,7 +206,7 @@ services:
 
   # --- MR. WHITE GAME ---
   mr-white-back-end:
-    image: ghcr.io/ingenito-roberto/mr-white-back-end:latest
+    image: ghcr.io/roberto-ingenito-home-lab/mr-white-back-end:latest
     container_name: mr-white-back-end
     expose:
       - "80"
@@ -218,7 +218,7 @@ services:
     restart: always
 
   mr-white-front-end:
-    image: ghcr.io/ingenito-roberto/mr-white-front-end:latest
+    image: ghcr.io/roberto-ingenito-home-lab/mr-white-front-end:latest
     container_name: mr-white-front-end
     expose:
       - "3000"
@@ -233,7 +233,7 @@ services:
   # --- LAFA MAGAZZINO APPLICATION ---
   # Backend .NET Core API
   lafa-magazzino-back-end:
-    image: ghcr.io/ingenito-roberto/lafa-magazzino-back-end:latest
+    image: ghcr.io/roberto-ingenito-home-lab/lafa-magazzino-back-end:latest
     container_name: lafa-magazzino-back-end
     expose:
       - "8080"
@@ -249,7 +249,7 @@ services:
 
   # Frontend Angular (nginx)
   lafa-magazzino-front-end:
-    image: ghcr.io/ingenito-roberto/lafa-magazzino-front-end:latest
+    image: ghcr.io/roberto-ingenito-home-lab/lafa-magazzino-front-end:latest
     container_name: lafa-magazzino-front-end
     expose:
       - "80"
