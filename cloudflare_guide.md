@@ -27,9 +27,9 @@ Configura le seguenti regole di hostname per far corrispondere i sottodomini ai 
 | `obsidian.robertoingenito.com`    | _Vuoto_                | HTTP         | `http://couchdb-obsidian:5984`        | Sincronizzazione Obsidian  |
 | `timesheet.robertoingenito.com`   | _Vuoto_                | HTTP         | `http://fortil-excel-timesheet:3000`  | Timesheet utility          |
 | `calcolatori.robertoingenito.com` | _Vuoto_                | HTTP         | `http://static-files:80`              | Pagine utility statiche    |
-| `lafa.robertoingenito.com`        | `/lafa-magazzino-api*` | HTTP         | `http://lafa-magazzino-back-end:8080` | Backend API di LAFA        |
-| `lafa.robertoingenito.com`        | `/swagger*`            | HTTP         | `http://lafa-magazzino-back-end:8080` | Documentazione API LAFA    |
-| `lafa.robertoingenito.com`        | _Vuoto_                | HTTP         | `http://lafa-magazzino-front-end:80`  | Frontend di LAFA Magazzino |
+| `lafa.robertoingenito.com`        | `/lafa-tools-api*`     | HTTP         | `http://lafa-tools-back-end:8080`     | Backend API di LAFA Tools  |
+| `lafa.robertoingenito.com`        | `/swagger*`            | HTTP         | `http://lafa-tools-back-end:8080`     | Documentazione API LAFA    |
+| `lafa.robertoingenito.com`        | _Vuoto_                | HTTP         | `http://lafa-tools-front-end:80`      | Frontend di LAFA Tools     |
 
 > [!IMPORTANT]
 > **ORDINE DELLE REGISTRAZIONI (ROTTE) SU CLOUDFLARE:**

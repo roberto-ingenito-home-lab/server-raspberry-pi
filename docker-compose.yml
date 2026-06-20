@@ -230,11 +230,11 @@ services:
     depends_on:
       - mr-white-back-end
 
-  # --- LAFA MAGAZZINO APPLICATION ---
+  # --- LAFA TOOLS APPLICATION ---
   # Backend .NET Core API
-  lafa-magazzino-back-end:
-    image: ghcr.io/roberto-ingenito-home-lab/lafa-magazzino-back-end:latest
-    container_name: lafa-magazzino-back-end
+  lafa-tools-back-end:
+    image: ghcr.io/roberto-ingenito-home-lab/lafa-tools-back-end:latest
+    container_name: lafa-tools-back-end
     expose:
       - "8080"
     environment:
@@ -249,16 +249,16 @@ services:
     restart: always
 
   # Frontend Angular (nginx)
-  lafa-magazzino-front-end:
-    image: ghcr.io/roberto-ingenito-home-lab/lafa-magazzino-front-end:latest
-    container_name: lafa-magazzino-front-end
+  lafa-tools-front-end:
+    image: ghcr.io/roberto-ingenito-home-lab/lafa-tools-front-end:latest
+    container_name: lafa-tools-front-end
     expose:
       - "80"
     networks:
       - common-network
     restart: always
     depends_on:
-      - lafa-magazzino-back-end
+      - lafa-tools-back-end
 
   # --- COUCHDB (Obsidian LiveSync) ---
   couchdb-obsidian:
