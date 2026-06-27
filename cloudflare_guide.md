@@ -13,23 +13,24 @@ Poiché utilizzi il tunnel in modalità remota (gestito tramite `--token TOKEN`)
 
 Configura le seguenti regole di hostname per far corrispondere i sottodomini ai relativi container interni nella rete Docker `common-network`:
 
-| Public Hostname (Sottodominio)    | Path (Opzionale)       | Service Type | URL (Nome Container)                  | Note                       |
-| :-------------------------------- | :--------------------- | :----------- | :------------------------------------ | :------------------------- |
-| `robertoingenito.com`             | `/robots.txt`          | HTTP         | `http://static-files:80`              | Gestione robots.txt (SEO)  |
-| `robertoingenito.com`             | `/sitemap.xml`         | HTTP         | `http://static-files:80`              | Gestione sitemap.xml (SEO) |
-| `robertoingenito.com`             | _Vuoto_                | HTTP         | `http://portfolio-app:80`             | Portfolio Principale       |
-| `cashly.robertoingenito.com`      | `/cashly-api*`         | HTTP         | `http://cashly-back-end:80`           | Backend API di Cashly      |
-| `cashly.robertoingenito.com`      | `/swagger*`            | HTTP         | `http://cashly-back-end:80`           | Documentazione API         |
-| `cashly.robertoingenito.com`      | _Vuoto_                | HTTP         | `http://cashly-front-end:80`          | Frontend di Cashly         |
-| `mr-white.robertoingenito.com`    | `/mr-white-api*`       | HTTP         | `http://mr-white-back-end:80`         | Backend WebSockets         |
-| `mr-white.robertoingenito.com`    | _Vuoto_                | HTTP         | `http://mr-white-front-end:3000`      | Frontend di Mr. White      |
-| `cloud.robertoingenito.com`       | _Vuoto_                | HTTP         | `http://nextcloud-app:80`             | Nextcloud Storage          |
-| `obsidian.robertoingenito.com`    | _Vuoto_                | HTTP         | `http://couchdb-obsidian:5984`        | Sincronizzazione Obsidian  |
-| `timesheet.robertoingenito.com`   | _Vuoto_                | HTTP         | `http://fortil-excel-timesheet:3000`  | Timesheet utility          |
-| `calcolatori.robertoingenito.com` | _Vuoto_                | HTTP         | `http://static-files:80`              | Pagine utility statiche    |
-| `lafa.robertoingenito.com`        | `/lafa-tools-api*`     | HTTP         | `http://lafa-tools-back-end:8080`     | Backend API di LAFA Tools  |
-| `lafa.robertoingenito.com`        | `/swagger*`            | HTTP         | `http://lafa-tools-back-end:8080`     | Documentazione API LAFA    |
-| `lafa.robertoingenito.com`        | _Vuoto_                | HTTP         | `http://lafa-tools-front-end:80`      | Frontend di LAFA Tools     |
+| Public Hostname (Sottodominio)    | Path (Opzionale)   | Service Type | URL (Nome Container)                 | Note                          |
+| :-------------------------------- | :----------------- | :----------- | :----------------------------------- | :---------------------------- |
+| `robertoingenito.com`             | `/robots.txt`      | HTTP         | `http://static-files:80`             | Gestione robots.txt (SEO)     |
+| `robertoingenito.com`             | `/sitemap.xml`     | HTTP         | `http://static-files:80`             | Gestione sitemap.xml (SEO)    |
+| `robertoingenito.com`             | _Vuoto_            | HTTP         | `http://portfolio-app:80`            | Portfolio Principale          |
+| `cashly.robertoingenito.com`      | `/cashly-api*`     | HTTP         | `http://cashly-back-end:80`          | Backend API di Cashly         |
+| `cashly.robertoingenito.com`      | `/swagger*`        | HTTP         | `http://cashly-back-end:80`          | Documentazione API            |
+| `cashly.robertoingenito.com`      | _Vuoto_            | HTTP         | `http://cashly-front-end:80`         | Frontend di Cashly            |
+| `mr-white.robertoingenito.com`    | `/mr-white-api*`   | HTTP         | `http://mr-white-back-end:80`        | Backend WebSockets            |
+| `mr-white.robertoingenito.com`    | _Vuoto_            | HTTP         | `http://mr-white-front-end:3000`     | Frontend di Mr. White         |
+| `cloud.robertoingenito.com`       | _Vuoto_            | HTTP         | `http://nextcloud-app:80`            | Nextcloud Storage             |
+| `obsidian.robertoingenito.com`    | _Vuoto_            | HTTP         | `http://couchdb-obsidian:5984`       | Sincronizzazione Obsidian     |
+| `timesheet.robertoingenito.com`   | _Vuoto_            | HTTP         | `http://fortil-excel-timesheet:3000` | Timesheet utility             |
+| `calcolatori.robertoingenito.com` | _Vuoto_            | HTTP         | `http://static-files:80`             | Pagine utility statiche       |
+| `lafa.robertoingenito.com`        | `/lafa-tools-api*` | HTTP         | `http://lafa-tools-back-end:8080`    | Backend API di LAFA Tools     |
+| `lafa.robertoingenito.com`        | `/swagger*`        | HTTP         | `http://lafa-tools-back-end:8080`    | Documentazione API LAFA       |
+| `lafa.robertoingenito.com`        | _Vuoto_            | HTTP         | `http://lafa-tools-front-end:80`     | Frontend di LAFA Tools        |
+| `affine.robertoingenito.com`      | _Vuoto_            | HTTP         | `http://affine-server:3010`          | Workspace AFFiNE (Notion alt) |
 
 > [!IMPORTANT]
 > **ORDINE DELLE REGISTRAZIONI (ROTTE) SU CLOUDFLARE:**
@@ -40,6 +41,16 @@ Configura le seguenti regole di hostname per far corrispondere i sottodomini ai 
 
 > [!NOTE]
 > Per le regole con path (es. `/cashly-api*`), Cloudflare inoltrerà automaticamente il path al container. Questo mantiene l'API ed il frontend sullo stesso sottodominio, eliminando problemi di CORS.
+
+> [!IMPORTANT]
+> **ABILITAZIONE WEBSOCKET PER INSTRADAMENTO IN TEMPO REALE:**
+> Servizi come **AFFiNE** (tramite protocollo di sincronizzazione Yjs) e **Mr. White** (tramite SignalR) dipendono strettamente da connessioni WebSocket persistenti.
+> Per ciascuno di questi sottodomini, nella console web di Cloudflare Zero Trust:
+>
+> 1. Entra in modifica della rotta (`Public Hostname`).
+> 2. Espandi la sezione **Additional application settings**.
+> 3. Clicca su **HTTP Settings**.
+> 4. Attiva lo switch **Websockets** (impostalo su _Enabled_). Se non viene abilitato, l'interfaccia dell'applicazione si avvierà ma non sarà in grado di stabilire la connessione in tempo reale e non sincronizzerà le note.
 
 > [!TIP]
 > Se i tuoi repository saranno privati su GitHub (e quindi le immagini GHCR richiederanno autenticazione per essere scaricate), ricordati di:
