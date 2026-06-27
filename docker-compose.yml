@@ -287,7 +287,7 @@ services:
       POSTGRES_PASSWORD: ${AFFINE_DB_PASSWORD}
       POSTGRES_DB: ${AFFINE_DB_NAME}
     volumes:
-      - /mnt/storage/affine/postgres:/var/lib/postgresql/data
+      - /mnt/storage/affine/postgres:/var/lib/postgresql
     networks:
       - common-network
     healthcheck:
