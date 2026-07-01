@@ -24,13 +24,12 @@ Configura le seguenti regole di hostname per far corrispondere i sottodomini ai 
 | `mr-white.robertoingenito.com`    | `/mr-white-api*`   | HTTP         | `http://mr-white-back-end:80`        | Backend WebSockets            |
 | `mr-white.robertoingenito.com`    | _Vuoto_            | HTTP         | `http://mr-white-front-end:3000`     | Frontend di Mr. White         |
 | `cloud.robertoingenito.com`       | _Vuoto_            | HTTP         | `http://nextcloud-app:80`            | Nextcloud Storage             |
-| `obsidian.robertoingenito.com`    | _Vuoto_            | HTTP         | `http://couchdb-obsidian:5984`       | Sincronizzazione Obsidian     |
 | `timesheet.robertoingenito.com`   | _Vuoto_            | HTTP         | `http://fortil-excel-timesheet:3000` | Timesheet utility             |
 | `calcolatori.robertoingenito.com` | _Vuoto_            | HTTP         | `http://static-files:80`             | Pagine utility statiche       |
 | `lafa.robertoingenito.com`        | `/lafa-tools-api*` | HTTP         | `http://lafa-tools-back-end:8080`    | Backend API di LAFA Tools     |
 | `lafa.robertoingenito.com`        | `/swagger*`        | HTTP         | `http://lafa-tools-back-end:8080`    | Documentazione API LAFA       |
 | `lafa.robertoingenito.com`        | _Vuoto_            | HTTP         | `http://lafa-tools-front-end:80`     | Frontend di LAFA Tools        |
-| `affine.robertoingenito.com`      | _Vuoto_            | HTTP         | `http://affine-server:3010`          | Workspace AFFiNE (Notion alt) |
+| `appflowy.robertoingenito.com`    | _Vuoto_            | HTTP         | `http://appflowy-nginx:80`           | AppFlowy Cloud (sincronizzazione) |
 
 > [!IMPORTANT]
 > **ORDINE DELLE REGISTRAZIONI (ROTTE) SU CLOUDFLARE:**
@@ -44,7 +43,7 @@ Configura le seguenti regole di hostname per far corrispondere i sottodomini ai 
 
 > [!IMPORTANT]
 > **ABILITAZIONE WEBSOCKET PER INSTRADAMENTO IN TEMPO REALE:**
-> Servizi come **AFFiNE** (tramite protocollo di sincronizzazione Yjs) e **Mr. White** (tramite SignalR) dipendono strettamente da connessioni WebSocket persistenti.
+> Servizi come **AppFlowy** (per la sincronizzazione in tempo reale) e **Mr. White** (tramite SignalR) dipendono strettamente da connessioni WebSocket persistenti.
 > Per ciascuno di questi sottodomini, nella console web di Cloudflare Zero Trust:
 >
 > 1. Entra in modifica della rotta (`Public Hostname`).
