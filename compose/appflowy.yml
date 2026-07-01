@@ -73,7 +73,7 @@ services:
       GOTRUE_JWT_EXP: 3600
       GOTRUE_JWT_ADMIN_GROUP_NAME: "supabase_admin"
       GOTRUE_DB_DRIVER: "postgres"
-      DATABASE_URL: "postgresql://${APPFLOWY_DB_USER}:${APPFLOWY_DB_PASSWORD}@appflowy-postgres:5432/${APPFLOWY_DB_NAME}?sslmode=disable"
+      DATABASE_URL: "postgresql://${APPFLOWY_DB_USER}:${APPFLOWY_DB_PASSWORD}@appflowy-postgres:5432/${APPFLOWY_DB_NAME}?sslmode=disable&search_path=auth"
       API_EXTERNAL_URL: "${APPFLOWY_SERVER_EXTERNAL_URL}/gotrue"
     networks:
       - common-network
