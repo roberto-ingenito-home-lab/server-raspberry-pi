@@ -1,0 +1,100 @@
+services:
+  # --- NEXTCLOUD SERVICES ---
+  # Applicazione Nextcloud (Cloud storage)
+  nextcloud:
+    container_name: nextcloud-app
+    image: nextcloud:32-apache
+    expose:
+      - "80"
+    depends_on:
+      nextcloud-db:
+        condition: service_healthy
+      nextcloud-redis:
+        condition: service_healthy
+    environment:
+      - POSTGRES_HOST=nextcloud-db
+      - POSTGRES_DB=nextcloud
+      - POSTGRES_USER=nextcloud
+      - POSTGRES_PASSWORD=${NEXTCLOUD_DB_PASSWORD}
+      - REDIS_HOST=nextcloud-redis
+      - NEXTCLOUD_TRUSTED_DOMAINS=${NEXTCLOUD_DOMAIN}
+      - TRUSTED_PROXIES=172.16.0.0/12
+      - OVERWRITEHOST=${NEXTCLOUD_DOMAIN}
+      - OVERWRITEPROTOCOL=https
+      - OVERWRITECLIURL=${NEXTCLOUD_CLI_URL}
+    volumes:
+      - nextcloud_data:/var/www/html
+      - /mnt/storage/nextcloud/data:/var/www/html/data
+    networks:
+      - common-network
+    restart: always
+
+  # Database Postgres specifico per Nextcloud
+  nextcloud-db:
+    container_name: nextcloud-db
+    image: postgres:18-alpine3.22
+    expose:
+      - "5432"
+    environment:
+      - POSTGRES_USER=nextcloud
+      - POSTGRES_PASSWORD=${NEXTCLOUD_DB_PASSWORD}
+      - POSTGRES_DB=nextcloud
+    volumes:
+      - nextcloud_db_data:/var/lib/postgresql
+    networks:
+      - common-network
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nextcloud -d nextcloud"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # Redis per il caching e file locking di Nextcloud
+  nextcloud-redis:
+    container_name: nextcloud-redis
+    image: redis:alpine
+    expose:
+      - "6379"
+    networks:
+      - common-network
+    restart: always
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # Servizio Cron per le operazioni in background di Nextcloud
+  nextcloud-cron:
+    container_name: nextcloud-cron
+    image: nextcloud:32-apache
+    entrypoint: /cron.sh
+    depends_on:
+      nextcloud-db:
+        condition: service_healthy
+      nextcloud-redis:
+        condition: service_healthy
+      nextcloud:
+        condition: service_started
+    volumes:
+      - nextcloud_data:/var/www/html
+      - /mnt/storage/nextcloud/data:/var/www/html/data
+    networks:
+      - common-network
+    restart: always
+
+networks:
+  common-network:
+    external: true
+    name: common-network
+
+volumes:
+  nextcloud_db_data:
+    external: true
+    name: nextcloud-db_data
+  nextcloud_data:
+    external: true
+    name: nextcloud_app_data

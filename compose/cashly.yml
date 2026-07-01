@@ -1,0 +1,70 @@
+services:
+  # --- CASHLY APPLICATION ---
+  # Backend .NET Core
+  cashly-back-end:
+    image: ghcr.io/roberto-ingenito-home-lab/cashly-back-end:latest
+    container_name: cashly-back-end
+    expose:
+      - "80"
+    depends_on:
+      cashly-database:
+        condition: service_healthy
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+      - ASPNETCORE_URLS=http://+:80
+      - ConnectionStrings__DefaultConnection=Host=cashly-database;Database=${CASHLY_POSTGRES_DB};Username=${CASHLY_POSTGRES_USER};Password=${CASHLY_POSTGRES_PASSWORD}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_USERNAME=${SMTP_USERNAME}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - SMTP_FROM_EMAIL=${SMTP_FROM_EMAIL}
+      - SMTP_FROM_NAME=${SMTP_FROM_NAME}
+    networks:
+      - common-network
+    restart: always
+
+  # Database Postgres per Cashly
+  cashly-database:
+    container_name: cashly-database
+    image: postgres:18-alpine3.22
+    ports:
+      - "5116:5432"
+    expose:
+      - "5432"
+    environment:
+      - POSTGRES_USER=${CASHLY_POSTGRES_USER}
+      - POSTGRES_PASSWORD=${CASHLY_POSTGRES_PASSWORD}
+      - POSTGRES_DB=${CASHLY_POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    networks:
+      - common-network
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${CASHLY_POSTGRES_USER} -d ${CASHLY_POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # Frontend Angular (nginx)
+  cashly-front-end:
+    image: ghcr.io/roberto-ingenito-home-lab/cashly-front-end:latest
+    container_name: cashly-front-end
+    expose:
+      - "80"
+    networks:
+      - common-network
+    restart: always
+    depends_on:
+      - cashly-back-end
+
+networks:
+  common-network:
+    external: true
+    name: common-network
+
+volumes:
+  postgres_data:
+    external: true
+    name: cashly-db_postgres_data

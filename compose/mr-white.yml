@@ -1,0 +1,31 @@
+services:
+  # --- MR. WHITE GAME ---
+  mr-white-back-end:
+    image: ghcr.io/roberto-ingenito-home-lab/mr-white-back-end:latest
+    container_name: mr-white-back-end
+    expose:
+      - "80"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+      - ASPNETCORE_URLS=http://+:80
+    networks:
+      - common-network
+    restart: always
+
+  mr-white-front-end:
+    image: ghcr.io/roberto-ingenito-home-lab/mr-white-front-end:latest
+    container_name: mr-white-front-end
+    expose:
+      - "3000"
+    environment:
+      - NODE_ENV=${NODE_ENV}
+    networks:
+      - common-network
+    restart: always
+    depends_on:
+      - mr-white-back-end
+
+networks:
+  common-network:
+    external: true
+    name: common-network

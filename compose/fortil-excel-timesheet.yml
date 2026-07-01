@@ -1,0 +1,16 @@
+services:
+  # --- ADDITIONAL APPS ---
+  # Servizio Timesheet
+  fortil-excel-timesheet:
+    image: ghcr.io/roberto-ingenito-home-lab/fortil-excel-timesheet:latest
+    container_name: fortil-excel-timesheet-app
+    expose:
+      - "3000"
+    networks:
+      - common-network
+    restart: unless-stopped
+
+networks:
+  common-network:
+    external: true
+    name: common-network

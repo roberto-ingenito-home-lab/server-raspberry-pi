@@ -1,0 +1,15 @@
+services:
+  # --- PORTFOLIO APPLICATION ---
+  portfolio:
+    image: ghcr.io/roberto-ingenito-home-lab/portfolio-app:latest
+    container_name: portfolio-app
+    expose:
+      - "80"
+    networks:
+      - common-network
+    restart: always
+
+networks:
+  common-network:
+    external: true
+    name: common-network

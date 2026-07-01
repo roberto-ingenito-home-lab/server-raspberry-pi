@@ -1,0 +1,35 @@
+services:
+  # --- LAFA TOOLS APPLICATION ---
+  # Backend .NET Core API
+  lafa-tools-back-end:
+    image: ghcr.io/roberto-ingenito-home-lab/lafa-tools-back-end:latest
+    container_name: lafa-tools-back-end
+    expose:
+      - "8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:8080
+      - LAFA_SUPABASE_URL=${LAFA_SUPABASE_URL}
+      - LAFA_SUPABASE_ANON_KEY=${LAFA_SUPABASE_ANON_KEY}
+      - LAFA_FRONTEND_ORIGIN=${LAFA_FRONTEND_ORIGIN}
+      - LAFA_LOGIN_PASSWORD=${LAFA_LOGIN_PASSWORD}
+    networks:
+      - common-network
+    restart: always
+
+  # Frontend Angular (nginx)
+  lafa-tools-front-end:
+    image: ghcr.io/roberto-ingenito-home-lab/lafa-tools-front-end:latest
+    container_name: lafa-tools-front-end
+    expose:
+      - "80"
+    networks:
+      - common-network
+    restart: always
+    depends_on:
+      - lafa-tools-back-end
+
+networks:
+  common-network:
+    external: true
+    name: common-network
