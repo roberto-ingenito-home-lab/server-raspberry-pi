@@ -9,7 +9,7 @@ services:
       POSTGRES_DB: ${APPFLOWY_DB_NAME}
       PGPORT: 5432
     volumes:
-      - /mnt/storage/appflowy/postgres:/var/lib/postgresql/data
+      - appflowy_postgres_data:/var/lib/postgresql/data
     networks:
       - common-network
     healthcheck:
@@ -41,7 +41,7 @@ services:
       MINIO_ROOT_USER: ${APPFLOWY_MINIO_USER}
       MINIO_ROOT_PASSWORD: ${APPFLOWY_MINIO_PASSWORD}
     volumes:
-      - /mnt/storage/appflowy/minio:/data
+      - appflowy_minio_data:/data
     networks:
       - common-network
     healthcheck:
@@ -161,7 +161,7 @@ services:
       APPFLOWY_KEYWORD_INDEX_DIR: "/var/lib/appflowy/keyword_index"
       APPFLOWY_GOTRUE_JWT_SECRET: ${APPFLOWY_JWT_SECRET}
     volumes:
-      - /mnt/storage/appflowy/search_index:/var/lib/appflowy/keyword_index
+      - appflowy_search_data:/var/lib/appflowy/keyword_index
     networks:
       - common-network
 
@@ -183,3 +183,8 @@ networks:
   common-network:
     external: true
     name: common-network
+
+volumes:
+  appflowy_postgres_data:
+  appflowy_minio_data:
+  appflowy_search_data:
