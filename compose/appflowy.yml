@@ -64,6 +64,8 @@ services:
       retries: 10
       start_period: 20s
     environment:
+      GOTRUE_PORT: 9999
+      PORT: 9999
       GOTRUE_ADMIN_EMAIL: ${APPFLOWY_ADMIN_EMAIL}
       GOTRUE_ADMIN_PASSWORD: ${APPFLOWY_ADMIN_PASSWORD}
       GOTRUE_DISABLE_SIGNUP: "false"
