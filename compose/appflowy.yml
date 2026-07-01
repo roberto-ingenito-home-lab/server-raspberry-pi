@@ -179,8 +179,8 @@ services:
     container_name: appflowy-admin
     restart: unless-stopped
     environment:
-      APPFLOWY_GOTRUE_BASE_URL: "http://appflowy-gotrue:9999"
-      APPFLOWY_BASE_URL: "http://appflowy-cloud:8000"
+      APPFLOWY_GOTRUE_BASE_URL: "${APPFLOWY_SERVER_EXTERNAL_URL}/gotrue"
+      APPFLOWY_BASE_URL: "${APPFLOWY_SERVER_EXTERNAL_URL}"
     depends_on:
       appflowy-gotrue:
         condition: service_healthy
