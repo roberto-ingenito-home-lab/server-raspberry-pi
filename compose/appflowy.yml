@@ -77,6 +77,11 @@ services:
       GOTRUE_DB_DRIVER: "postgres"
       DATABASE_URL: "postgresql://${APPFLOWY_DB_USER}:${APPFLOWY_DB_PASSWORD}@appflowy-postgres:5432/${APPFLOWY_DB_NAME}?sslmode=disable&search_path=auth"
       API_EXTERNAL_URL: "${APPFLOWY_SERVER_EXTERNAL_URL}/gotrue"
+      GOTRUE_MAILER_AUTOCONFIRM: "true"
+      GOTRUE_MAILER_URLPATHS_CONFIRMATION: "/gotrue/verify"
+      GOTRUE_MAILER_URLPATHS_INVITE: "/gotrue/verify"
+      GOTRUE_MAILER_URLPATHS_RECOVERY: "/gotrue/verify"
+      GOTRUE_MAILER_URLPATHS_EMAIL_CHANGE: "/gotrue/verify"
     networks:
       - common-network
 
@@ -109,9 +114,10 @@ services:
       APPFLOWY_S3_SECRET_KEY: ${APPFLOWY_MINIO_PASSWORD}
       APPFLOWY_S3_BUCKET: "appflowy"
       APPFLOWY_S3_PRESIGNED_URL_ENDPOINT: "${APPFLOWY_SERVER_EXTERNAL_URL}/minio-api"
-      APPFLOWY_ACCESS_CONTROL: "public"
+      APPFLOWY_ACCESS_CONTROL: "true"
       APPFLOWY_BASE_URL: ${APPFLOWY_SERVER_EXTERNAL_URL}
       AI_ENABLED: "false"
+      APPFLOWY_SEARCH_SERVICE_URL: "http://appflowy-search:4002"
     networks:
       - common-network
 
@@ -164,6 +170,35 @@ services:
       APPFLOWY_GOTRUE_JWT_SECRET: ${APPFLOWY_JWT_SECRET}
     volumes:
       - appflowy_search_data:/var/lib/appflowy/keyword_index
+    networks:
+      - common-network
+
+  appflowy-admin:
+    image: appflowyinc/admin_frontend:latest
+    container_name: appflowy-admin
+    restart: unless-stopped
+    environment:
+      APPFLOWY_GOTRUE_BASE_URL: "http://appflowy-gotrue:9999"
+      APPFLOWY_BASE_URL: "http://appflowy-cloud:8000"
+    depends_on:
+      appflowy-gotrue:
+        condition: service_healthy
+      appflowy-cloud:
+        condition: service_healthy
+    networks:
+      - common-network
+
+  appflowy-web:
+    image: appflowyinc/appflowy_web:latest
+    container_name: appflowy-web
+    restart: unless-stopped
+    depends_on:
+      appflowy-cloud:
+        condition: service_healthy
+    environment:
+      APPFLOWY_BASE_URL: ${APPFLOWY_SERVER_EXTERNAL_URL}
+      APPFLOWY_GOTRUE_BASE_URL: ${APPFLOWY_SERVER_EXTERNAL_URL}/gotrue
+      APPFLOWY_WS_BASE_URL: "wss://appflowy.robertoingenito.com/ws/v2"
     networks:
       - common-network
 
