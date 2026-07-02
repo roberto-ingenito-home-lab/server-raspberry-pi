@@ -1,0 +1,63 @@
+services:
+  docmost:
+    image: ghcr.io/ingenito-roberto/docmost-custom:latest
+    container_name: docmost
+    depends_on:
+      docmost-db:
+        condition: service_healthy
+      docmost-redis:
+        condition: service_healthy
+    environment:
+      APP_URL: ${DOCMOST_APP_URL}
+      APP_SECRET: ${DOCMOST_APP_SECRET}
+      DATABASE_URL: postgresql://${DOCMOST_DB_USER}:${DOCMOST_DB_PASSWORD}@docmost-db:5432/${DOCMOST_DB_NAME}
+      REDIS_URL: redis://docmost-redis:6379
+    networks:
+      - common-network
+    restart: unless-stopped
+    volumes:
+      - docmost_storage:/app/data/storage
+
+  docmost-db:
+    image: postgres:16-alpine
+    container_name: docmost-db
+    environment:
+      POSTGRES_DB: ${DOCMOST_DB_NAME}
+      POSTGRES_USER: ${DOCMOST_DB_USER}
+      POSTGRES_PASSWORD: ${DOCMOST_DB_PASSWORD}
+    networks:
+      - common-network
+    restart: unless-stopped
+    volumes:
+      - docmost_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DOCMOST_DB_USER} -d ${DOCMOST_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  docmost-redis:
+    image: redis:8-alpine
+    container_name: docmost-redis
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory-policy", "noeviction"]
+    networks:
+      - common-network
+    restart: unless-stopped
+    volumes:
+      - docmost_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  common-network:
+    external: true
+    name: common-network
+
+volumes:
+  docmost_storage:
+  docmost_db_data:
+  docmost_redis_data:

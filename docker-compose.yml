@@ -1,5 +1,5 @@
 include:
-  - ./compose/appflowy.yml
+  - ./compose/docmost.yml
   - ./compose/infrastructure.yml
   - ./compose/cashly.yml
   - ./compose/nextcloud.yml
