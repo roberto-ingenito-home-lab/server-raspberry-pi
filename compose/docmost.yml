@@ -29,7 +29,7 @@ services:
       - common-network
     restart: unless-stopped
     volumes:
-      - docmost_db_data:/var/lib/postgresql/data
+      - docmost_db_data:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DOCMOST_DB_USER} -d ${DOCMOST_DB_NAME}"]
       interval: 10s
