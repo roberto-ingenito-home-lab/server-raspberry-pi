@@ -313,7 +313,42 @@ sudo tee /usr/local/bin/raid-notify-telegram.sh > /dev/null <<'EOF'
 #!/bin/bash
 BOT_TOKEN="IL_TUO_TOKEN_QUI"
 CHAT_ID="IL_TUO_CHAT_ID_QUI"
-MESSAGE="⚠️ RAID Alert on $(hostname): $1"
+
+EVENT="$1"        # es: RebuildStarted, Fail, DegradedArray...
+DEVICE="$2"       # mdadm passa spesso anche il device come $2, es /dev/md127
+MD_NAME=$(basename "$DEVICE" 2>/dev/null)
+
+# Se abbiamo un device valido, controlliamo l'azione reale in corso
+ACTION=""
+if [ -n "$MD_NAME" ] && [ -f "/sys/block/$MD_NAME/md/sync_action" ]; then
+    ACTION=$(cat "/sys/block/$MD_NAME/md/sync_action")
+fi
+
+case "$EVENT" in
+  RebuildStarted)
+    if [ "$ACTION" = "check" ]; then
+      LABEL="🔍 Monthly consistency check started (routine, read-only)"
+    elif [ "$ACTION" = "recover" ]; then
+      LABEL="🚨 REBUILD started — a disk is being rebuilt, array was degraded!"
+    else
+      LABEL="⚠️ Rebuild/check started (action: ${ACTION:-unknown})"
+    fi
+    ;;
+  RebuildFinished)
+    LABEL="✅ Rebuild/check finished"
+    ;;
+  Fail)
+    LABEL="🔴 DISK FAILURE detected"
+    ;;
+  DegradedArray)
+    LABEL="🟠 Array is DEGRADED"
+    ;;
+  *)
+    LABEL="$EVENT"
+    ;;
+esac
+
+MESSAGE="RAID Alert on $(hostname) [$DEVICE]: $LABEL"
 
 curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
   -d chat_id="${CHAT_ID}" \
