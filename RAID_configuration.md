@@ -1,24 +1,24 @@
-# Guida: Ubuntu Server su microSD + RAID 1 NVMe Storage
+# Guide: Ubuntu Server on microSD + RAID 1 NVMe Storage
 
-## Raspberry Pi 5 con Pimoroni NVMe Base Duo
+## Raspberry Pi 5 with Pimoroni NVMe Base Duo
 
-## Architettura
+## Architecture
 
-- **Boot**: microSD (sistema operativo)
-- **Storage**: RAID 1 su due NVMe (dati)
-- **Accesso**: SSH con password, utente `ingenitor` superuser
-- **Rete**: IP statico `192.168.1.20`
+- **Boot**: microSD (operating system)
+- **Storage**: RAID 1 on two NVMes (data)
+- **Access**: SSH with password, `ingenitor` superuser
+- **Network**: Static IP `192.168.1.20`
 
-## Prerequisiti
+## Prerequisites
 
-- Ubuntu Server già scritto su microSD con dd
-- Raspberry Pi 5 avviato da USB
-- Due NVMe installati nell'HAT Pimoroni
-- Accesso SSH alla USB
+- Ubuntu Server already written to microSD with dd
+- Raspberry Pi 5 booted from USB
+- Two NVMes installed in the Pimoroni HAT
+- SSH access to the USB
 
-## Fase 1: Configurazione della microSD (Prima del Primo Boot)
+## Phase 1: MicroSD Configuration (Before First Boot)
 
-### 1.0 Installazione del sistema operativo
+### 1.0 Operating system installation
 
 ```bash
 cd /tmp
@@ -27,7 +27,7 @@ sudo xzcat /tmp/ubuntu-raspi.img.xz | sudo dd of=/dev/mmcblk0 bs=4M status=progr
 sync
 ```
 
-### 1.1 Monta la partizione root della microSD
+### 1.1 Mount the microSD root partition
 
 ```bash
 sudo mkdir -p /mnt/sd
@@ -36,33 +36,33 @@ sudo mkdir -p /mnt/sdboot
 sudo mount /dev/mmcblk0p1 /mnt/sdboot
 ```
 
-### 1.2 Crea l'utente `ingenitor` superuser
+### 1.2 Create the `ingenitor` superuser
 
 ```bash
-# Prepara il chroot
+# Prepare chroot
 sudo mount --bind /dev /mnt/sd/dev
 sudo mount --bind /proc /mnt/sd/proc
 sudo mount --bind /sys /mnt/sd/sys
 sudo mount --bind /run /mnt/sd/run
 
-# Entra nel sistema sulla microSD
+# Enter the system on the microSD
 sudo chroot /mnt/sd
 
-# Crea l'utente ingenitor
+# Create the ingenitor user
 adduser ingenitor
-# Inserisci la password quando richiesto
+# Enter password when prompted
 
-# Aggiungi ai gruppi necessari (incluso sudo)
+# Add to necessary groups (including sudo)
 usermod -aG sudo,adm,dialout,cdrom,audio,video,plugdev,netdev,lxd ingenitor
 
-# Verifica
+# Verify
 groups ingenitor
 ```
 
-### 1.3 Configura IP statico (192.168.1.20)
+### 1.3 Configure static IP (192.168.1.20)
 
 ```bash
-# Ancora dentro il chroot
+# Still inside the chroot
 cat > /etc/netplan/50-static-ip.yaml <<'EOF'
 network:
   version: 2
@@ -80,16 +80,16 @@ network:
           - 1.1.1.1
 EOF
 
-# Verifica
+# Verify
 cat /etc/netplan/50-static-ip.yaml
 ```
 
-### 1.4 Abilita SSH con autenticazione password
+### 1.4 Enable SSH with password authentication
 
-Controlla che in `/etc/ssh/sshd_config` ci sia questa riga `Include /etc/ssh/sshd_config.d/*.conf`. Altrimenti inseriscila.
+Check that `/etc/ssh/sshd_config` contains this line `Include /etc/ssh/sshd_config.d/*.conf`. Otherwise, insert it.
 
 ```bash
-# Ancora dentro il chroot
+# Still inside the chroot
 
 sudo tee /etc/ssh/sshd_config.d/50-cloud-init.conf > /dev/null <<'EOF'
 PermitRootLogin no
@@ -97,21 +97,21 @@ PasswordAuthentication yes
 EOF
 ```
 
-### 1.5 Installa mdadm e strumenti necessari
+### 1.5 Install mdadm and necessary tools
 
 ```bash
-# Ancora dentro il chroot
+# Still inside the chroot
 apt update
 apt install -y mdadm nvme-cli
 ```
 
-### 1.6 Esci dal chroot e smonta
+### 1.6 Exit chroot and unmount
 
 ```bash
-# Esci dal chroot
+# Exit chroot
 exit
 
-# Smonta tutto
+# Unmount everything
 sudo umount /mnt/sd/run
 sudo umount /mnt/sd/dev
 sudo umount /mnt/sd/proc
@@ -120,205 +120,205 @@ sudo umount /mnt/sd
 sudo umount /mnt/sdboot
 ```
 
-## Fase 2: Primo Boot dalla microSD
+## Phase 2: First Boot from microSD
 
-### 2.1 Spegni il sistema
+### 2.1 Shut down the system
 
 ```bash
 sudo shutdown -h now
 ```
 
-### 2.2 Rimuovi la chiavetta USB
+### 2.2 Remove the USB drive
 
-### 2.3 Accendi il Raspberry Pi
+### 2.3 Turn on the Raspberry Pi
 
-Dovrebbe avviarsi dalla microSD.
+It should boot from the microSD.
 
-### 2.4 Connettiti via SSH
+### 2.4 Connect via SSH
 
 ```bash
 ssh ingenitor@192.168.1.20
 ```
 
-**Nota:** Se al primo boot Ubuntu chiede di cambiare la password per l'utente `ubuntu`, puoi ignorarlo e loggarti direttamente con `ingenitor`.
+**Note:** If on the first boot Ubuntu asks to change the password for the `ubuntu` user, you can ignore it and log in directly with `ingenitor`.
 
-## Fase 3: Creazione del RAID 1 sui NVMe
+## Phase 3: RAID 1 Creation on NVMes
 
-### 3.1 Verifica i dispositivi NVMe
+### 3.1 Verify NVMe devices
 
 ```bash
 lsblk
 ```
 
-Dovresti vedere:
+You should see:
 
 - `nvme0n1` - 238.5G
 - `nvme1n1` - 238.5G
 
-### 3.2 Pulisci i dischi NVMe
+### 3.2 Wipe the NVMe disks
 
 ```bash
-# Pulisci eventuali metadata esistenti
+# Wipe any existing metadata
 sudo wipefs -a /dev/nvme0n1
 sudo wipefs -a /dev/nvme1n1
 sudo mdadm --zero-superblock /dev/nvme0n1 2>/dev/null || true
 sudo mdadm --zero-superblock /dev/nvme1n1 2>/dev/null || true
 ```
 
-### 3.3 Crea le partizioni GPT su entrambi i dischi
+### 3.3 Create GPT partitions on both disks
 
-**Primo NVMe:**
+**First NVMe:**
 
 ```bash
 sudo gdisk /dev/nvme0n1
 ```
 
-Comandi in gdisk:
+Commands in gdisk:
 
-- `o` (crea nuova tabella GPT vuota)
-- `n` (nuova partizione)
-  - Partition number: `1` (Invio)
-  - First sector: (Invio per default)
-  - Last sector: (Invio per usare tutto lo spazio)
+- `o` (create new empty GPT table)
+- `n` (new partition)
+  - Partition number: `1` (Enter)
+  - First sector: (Enter for default)
+  - Last sector: (Enter to use all space)
   - Hex code: `fd00` (Linux RAID)
-- `w` (scrivi le modifiche)
-- `y` (conferma)
+- `w` (write changes)
+- `y` (confirm)
 
-**Secondo NVMe:**
+**Second NVMe:**
 
 ```bash
 sudo gdisk /dev/nvme1n1
 ```
 
-Ripeti gli stessi comandi.
+Repeat the same commands.
 
-### 3.4 Crea l'array RAID 1
+### 3.4 Create the RAID 1 array
 
 ```bash
 sudo mdadm --create /dev/md/storage --level=1 --raid-devices=2 --metadata=1.2 /dev/nvme0n1p1 /dev/nvme1n1p1
 ```
 
-Quando chiede il write-intent bitmap, rispondi: `y`
+When asked for the write-intent bitmap, answer: `y`
 
-### 3.5 Verifica il RAID
+### 3.5 Verify the RAID
 
 ```bash
 watch cat /proc/mdstat
 ```
 
-Vedrai la sincronizzazione in corso. Puoi continuare mentre sincronizza.
+You will see the synchronization in progress. You can continue while it syncs.
 
-### 3.6 Formatta il RAID con ext4
+### 3.6 Format the RAID with ext4
 
 ```bash
 sudo mkfs.ext4 -L STORAGE /dev/md/storage
 ```
 
-### 3.7 Ottieni l'UUID del RAID
+### 3.7 Get the RAID UUID
 
 ```bash
 sudo blkid /dev/md/storage
 ```
 
-**Annota l'UUID!** Esempio: `12345678-abcd-1234-5678-123456789abc`
+**Write down the UUID!** Example: `12345678-abcd-1234-5678-123456789abc`
 
-## Fase 4: Monta Automaticamente il RAID al Boot
+## Phase 4: Automatically Mount the RAID at Boot
 
-### 4.1 Crea il punto di mount
+### 4.1 Create the mount point
 
 ```bash
 sudo mkdir -p /mnt/storage
 ```
 
-### 4.2 Configura fstab per il mount automatico
+### 4.2 Configure fstab for automatic mount
 
 ```bash
-# Ottieni l'UUID
+# Get the UUID
 UUID_STORAGE=$(sudo blkid -s UUID -o value /dev/md/storage)
 
-# Aggiungi al fstab
+# Add to fstab
 echo "UUID=$UUID_STORAGE  /mnt/storage  ext4  defaults,nofail  0  2" | sudo tee -a /etc/fstab
 
-# Verifica
+# Verify
 cat /etc/fstab
 ```
 
-**Nota:** `nofail` permette al sistema di avviarsi anche se il RAID non è disponibile.
+**Note:** `nofail` allows the system to boot even if the RAID is not available.
 
-### 4.3 Configura mdadm.conf
+### 4.3 Configure mdadm.conf
 
 ```bash
-# Genera la configurazione RAID
+# Generate RAID configuration
 sudo mdadm --detail --scan | sudo tee -a /etc/mdadm/mdadm.conf
 
-# Verifica
+# Verify
 cat /etc/mdadm/mdadm.conf
 ```
 
-### 4.4 Aggiorna initramfs
+### 4.4 Update initramfs
 
 ```bash
 sudo update-initramfs -u -k all
 ```
 
-### 4.5 Monta subito il RAID
+### 4.5 Mount the RAID immediately
 
 ```bash
 sudo mount -a
 df -h
 ```
 
-Dovresti vedere `/mnt/storage` montato con ~238GB disponibili.
+You should see `/mnt/storage` mounted with ~238GB available.
 
-## Fase 5: Configurazione dei Permessi Storage
+## Phase 5: Storage Permissions Configuration
 
-### 5.1 Cambia proprietà della directory storage
+### 5.1 Change ownership of the storage directory
 
 ```bash
-# Rendi ingenitor proprietario dello storage
+# Make ingenitor the owner of the storage
 sudo chown -R ingenitor:ingenitor /mnt/storage
 
-# Verifica
+# Verify
 ls -la /mnt/storage
 ```
 
-### 5.2 Test di scrittura
+### 5.2 Write test
 
 ```bash
-# Crea un file di test
+# Create a test file
 echo "RAID 1 funziona!" > /mnt/storage/test.txt
 cat /mnt/storage/test.txt
 ```
 
-### 6 Notifiche via Telegram
+### 6 Telegram Notifications
 
 **Setup:**
 
-1. Crea un bot Telegram:
+1. Create a Telegram bot:
 
-   - Parla con [@BotFather](https://t.me/botfather) su Telegram
-   - Usa `/newbot` e segui le istruzioni
-   - Ottieni il **TOKEN** del bot
+   - Talk to [@BotFather](https://t.me/botfather) on Telegram
+   - Use `/newbot` and follow instructions
+   - Get the bot **TOKEN**
 
-2. Ottieni il tuo **CHAT_ID**:
+2. Get your **CHAT_ID**:
 
-   - Parla con [@userinfobot](https://t.me/userinfobot)
-   - Ti darà il tuo CHAT_ID
+   - Talk to [@userinfobot](https://t.me/userinfobot)
+   - It will give you your CHAT_ID
 
-3. Installa lo script di notifica:
+3. Install the notification script:
 
 ```bash
-# Crea script notifiche Telegram
+# Create Telegram notifications script
 sudo tee /usr/local/bin/raid-notify-telegram.sh > /dev/null <<'EOF'
 #!/bin/bash
 BOT_TOKEN="IL_TUO_TOKEN_QUI"
 CHAT_ID="IL_TUO_CHAT_ID_QUI"
 
-EVENT="$1"        # es: RebuildStarted, Fail, DegradedArray...
-DEVICE="$2"       # mdadm passa spesso anche il device come $2, es /dev/md127
+EVENT="$1"        # e.g.: RebuildStarted, Fail, DegradedArray...
+DEVICE="$2"       # mdadm often passes the device as well as $2, e.g. /dev/md127
 MD_NAME=$(basename "$DEVICE" 2>/dev/null)
 
-# Se abbiamo un device valido, controlliamo l'azione reale in corso
+# If we have a valid device, check the actual action in progress
 ACTION=""
 if [ -n "$MD_NAME" ] && [ -f "/sys/block/$MD_NAME/md/sync_action" ]; then
     ACTION=$(cat "/sys/block/$MD_NAME/md/sync_action")
@@ -358,17 +358,17 @@ EOF
 
 sudo chmod +x /usr/local/bin/raid-notify-telegram.sh
 
-# Configura mdadm per usare lo script
+# Configure mdadm to use the script
 sudo nano /etc/mdadm/mdadm.conf
 ```
 
-Aggiungi/modifica questa riga:
+Add/modify this line:
 
 ```
 PROGRAM /usr/local/bin/raid-notify-telegram.sh
 ```
 
-Riavvia mdmonitor:
+Restart mdmonitor:
 
 ```bash
 sudo systemctl restart mdmonitor.service
@@ -377,102 +377,102 @@ sudo systemctl restart mdmonitor.service
 **Test:**
 
 ```bash
-# Simula un alert
+# Simulate an alert
 echo "Test" | /usr/local/bin/raid-notify-telegram.sh "RAID Test Alert"
 ```
 
-Dovresti ricevere un messaggio su Telegram! 🎉
+You should receive a message on Telegram! 🎉
 
-## Test del sistema di notifica
+## Notification System Test
 
-Dopo aver configurato una delle opzioni sopra:
+After configuring one of the options above:
 
 ```bash
-# Simula un guasto (sostituisci /dev/md/storage con il nome effettivo, es. /dev/md127 se necessario)
-# Dovresti ricevere la notifica
+# Simulate a failure (replace /dev/md/storage with actual name, e.g. /dev/md127 if necessary)
+# You should receive the notification
 sudo mdadm /dev/md/storage --fail /dev/nvme0n1p1
 
-# Aspetta qualche secondo
+# Wait a few seconds
 sleep 5
 
-# Controlla i log
+# Check logs
 sudo journalctl -u mdmonitor.service -n 20
 
-# Ripristina
+# Restore
 sudo mdadm /dev/md/storage --remove /dev/nvme0n1p1
 sudo mdadm /dev/md/storage --add /dev/nvme0n1p1
 ```
 
-# Comandi Utili per Gestione RAID
+# Useful Commands for RAID Management
 
-### Verificare stato RAID
+### Check RAID status
 
 ```bash
 cat /proc/mdstat
 sudo mdadm --detail /dev/md/storage
-watch cat /proc/mdstat  # monitoraggio in tempo reale
+watch cat /proc/mdstat  # real-time monitoring
 ```
 
-### Simulare un guasto del disco
+### Simulate disk failure
 
 ```bash
 sudo mdadm /dev/md/storage --fail /dev/nvme0n1p1
 ```
 
-### Rimuovere disco guasto
+### Remove failed disk
 
 ```bash
 sudo mdadm /dev/md/storage --remove /dev/nvme0n1p1
 ```
 
-### Aggiungere disco sostitutivo
+### Add replacement disk
 
 ```bash
-# Dopo aver partizionato il nuovo disco
+# After partitioning the new disk
 sudo mdadm /dev/md/storage --add /dev/nvme0n1p1
 ```
 
-### Fermare il RAID (per manutenzione)
+### Stop RAID (for maintenance)
 
 ```bash
 sudo umount /mnt/storage
 sudo mdadm --stop /dev/md/storage
 ```
 
-### Riassemblare il RAID
+### Reassemble RAID
 
 ```bash
 sudo mdadm --assemble /dev/md/storage /dev/nvme0n1p1 /dev/nvme1n1p1
 sudo mount /mnt/storage
 ```
 
-## Struttura Directory Suggerita per Storage
+## Suggested Directory Structure for Storage
 
 ```bash
-# Crea directory organizzate
+# Create organized directories
 mkdir -p /mnt/storage/{documents,media,backups,downloads,projects}
 
-# Imposta permessi
+# Set permissions
 sudo chown -R ingenitor:ingenitor /mnt/storage
 ```
 
-## Monitoraggio Salute NVMe
+## NVMe Health Monitoring
 
-### Verifica temperatura e salute
+### Check temperature and health
 
 ```bash
 sudo nvme smart-log /dev/nvme0n1
 sudo nvme smart-log /dev/nvme1n1
 ```
 
-### Verifica errori
+### Check errors
 
 ```bash
 sudo nvme error-log /dev/nvme0n1
 sudo nvme error-log /dev/nvme1n1
 ```
 
-## Backup della Configurazione
+## Configuration Backup
 
 ### Backup mdadm.conf
 
@@ -486,49 +486,49 @@ sudo cp /etc/mdadm/mdadm.conf /mnt/storage/backups/mdadm.conf.backup
 sudo cp /etc/fstab /mnt/storage/backups/fstab.backup
 ```
 
-## Risoluzione Problemi
+## Troubleshooting
 
-### RAID non si monta al boot
+### RAID does not mount at boot
 
 ```bash
-# Verifica mdadm.conf
+# Verify mdadm.conf
 cat /etc/mdadm/mdadm.conf
 
-# Riassembla manualmente
+# Reassemble manually
 sudo mdadm --assemble --scan
 sudo mount /mnt/storage
 ```
 
-### Uno o entrambi i dischi non vengono rilevati
+### One or both disks are not detected
 
 ```bash
-# Verifica dispositivi PCIe
+# Verify PCIe devices
 lspci | grep -i nvme
 
-# Controlla log kernel
+# Check kernel logs
 sudo dmesg | grep -i nvme
 
-# Rescan bus PCIe
+# Rescan PCIe bus
 echo 1 | sudo tee /sys/bus/pci/rescan
 ```
 
-### Sincronizzazione RAID lenta
+### Slow RAID synchronization
 
 ```bash
-# Aumenta velocità rebuild (temporaneamente)
+# Increase rebuild speed (temporarily)
 echo 200000 | sudo tee /proc/sys/dev/raid/speed_limit_min
 echo 400000 | sudo tee /proc/sys/dev/raid/speed_limit_max
 ```
 
-### Controllare prestazioni storage
+### Check storage performance
 
 ```bash
-# Test velocità scrittura
+# Write speed test
 sudo dd if=/dev/zero of=/mnt/storage/test.img bs=1M count=1024 conv=fdatasync
 
-# Test velocità lettura
+# Read speed test
 sudo dd if=/mnt/storage/test.img of=/dev/null bs=1M
 
-# Pulizia
+# Cleanup
 rm /mnt/storage/test.img
 ```

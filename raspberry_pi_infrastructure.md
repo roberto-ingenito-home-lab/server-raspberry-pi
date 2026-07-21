@@ -1,19 +1,19 @@
-# 🛠️ Configurazione del Server Host (Raspberry Pi / Ubuntu)
+# 🛠️ Host Server Configuration (Raspberry Pi / Ubuntu)
 
-Questo documento descrive le configurazioni di base del sistema operativo host (si presume una distribuzione basata su Ubuntu o Raspberry Pi OS) e della rete necessarie per far funzionare correttamente l'ambiente Docker e la pipeline CI/CD.
+This document describes the basic configurations of the host operating system (assuming an Ubuntu or Raspberry Pi OS based distribution) and the network required to properly run the Docker environment and the CI/CD pipeline.
 
-## 🔗 Configurazione Rete: Indirizzo IP Statico
+## 🔗 Network Configuration: Static IP Address
 
-Per garantire che i servizi Docker siano sempre accessibili allo stesso indirizzo di rete, è essenziale configurare un IP statico. Su Ubuntu Server, questo si fa tramite Netplan.
+To ensure that Docker services are always accessible at the same network address, it is essential to configure a static IP. On Ubuntu Server, this is done via Netplan.
 
-1.  **Aprire il file di configurazione di Netplan:**
+1.  **Open the Netplan configuration file:**
 
     ```sh
     sudo nano /etc/netplan/50-cloud-init.yaml
     ```
 
-2.  **Incollare e Adattare la Configurazione:**
-    Sostituire gli indirizzi IP (`addresses`, `via`) con i valori appropriati per la propria rete locale.
+2.  **Paste and Adapt the Configuration:**
+    Replace the IP addresses (`addresses`, `via`) with the appropriate values for your local network.
 
     ```yml
     network:
@@ -22,37 +22,25 @@ Per garantire che i servizi Docker siano sempre accessibili allo stesso indirizz
         eth0:
           dhcp4: no
           addresses:
-            - 192.168.1.20/24   # Indirizzo IP statico del tuo Raspberry Pi
+            - 192.168.1.100/24 # Static IP address of your Raspberry Pi
           routes:
             - to: default
-              via: 192.168.1.1   # Gateway del router (ad esempio, indirizzo IP del tuo router Vodafone)
+              via: 192.168.1.1 # Router gateway
           nameservers:
             addresses:
-              - 1.1.1.1         # DNS di Cloudflare
-              - 8.8.8.8         # DNS di Google
+              - 1.1.1.1 # Cloudflare DNS
+              - 8.8.8.8 # Google DNS
     ```
 
-3.  **Applicare le Modifiche:**
+3.  **Apply the Changes:**
 
     ```sh
     sudo netplan apply
     ```
 
-## 🌐 Accesso Remoto e DNS (Cloudflare Tunnel)
+## 🌐 Remote Access and DNS (Cloudflare Tunnel)
 
-L'accesso remoto sicuro ai servizi ospitati sul server avviene tramite **Cloudflare Tunnel** (gestito dal servizio `cloudflared` in Docker).
+Secure remote access to services hosted on the server is achieved through **Cloudflare Tunnel** (managed by the `cloudflared` service in Docker).
 
-* **Nessun DDNS o Port Forwarding necessario:** Non è più necessario configurare servizi di Dynamic DNS (come NO-IP) o aprire porte sul router domestico (porte 80/443).
-* **Funzionamento:** Il container `cloudflared` stabilisce una connessione sicura in uscita verso la rete di Cloudflare. Il traffico in entrata viene instradato in modo sicuro tramite il tunnel ai singoli servizi in esecuzione nella rete Docker `common-network`.
-* **Configurazione:** Per maggiori informazioni sulla configurazione delle rotte e dei sottodomini, consulta [cloudflare_guide.md](file:///C:/Users/roberto/Documents/GitHub/server-raspberry-pi/cloudflare_guide.md).
-
-## 🤖 GitHub Actions Self-Hosted Runner
-
-Per abilitare il Continuous Deployment (CI/CD) direttamente sul server host (Raspberry Pi), è stato configurato un **Self-Hosted Runner** di GitHub Actions.
-
-* **Scopo:** Il runner è responsabile di eseguire il workflow di deployment (`deploy.yml`) che include il pull del codice, la ricostruzione e l'avvio dei container Docker.
-
-* **Documentazione Ufficiale:** Per istruzioni dettagliate su come installare e configurare il runner sul tuo Raspberry Pi, consulta:
-    [How to configure GitHub Actions Self-Hosted Runner](https://docs.github.com/en/actions/how-tos/manage-runners/self-hosted-runners/add-runners#adding-a-self-hosted-runner-to-a-repository)
-
-
+- **How it works:** The `cloudflared` container establishes a secure outbound connection to the Cloudflare network. Inbound traffic is securely routed through the tunnel to the individual services running in the `common-network` Docker network.
+- **Configuration:** For more information on configuring routes and subdomains, see [cloudflare_guide.md](cloudflare_guide.md).

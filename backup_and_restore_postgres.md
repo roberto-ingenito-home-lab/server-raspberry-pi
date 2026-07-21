@@ -1,17 +1,17 @@
-# Backup e Ripristino PostgreSQL
+# PostgreSQL Backup and Restore
 
-Questa guida copre le procedure di backup e ripristino per i database PostgreSQL utilizzati nei progetti.
+This guide covers the backup and restore procedures for PostgreSQL databases used in the projects.
 
 ## 💰 Cashly (Database: `cashly-database`)
 
 ### Backup
-Esporta solo i dati, escludendo la cronologia delle migrazioni di Entity Framework:
+Export data only, excluding the Entity Framework migration history:
 ```bash
 docker exec cashly-database pg_dump -U user -d cashly_prod -a --column-inserts --exclude-table "\"__EFMigrationsHistory\"" > backup_cashly_data.sql
 ```
 
-### Ripristino
-Ripristina i dati esportati:
+### Restore
+Restore the exported data:
 ```bash
 docker exec -i cashly-database psql -U user -d cashly_prod < backup_cashly_data.sql
 ```
@@ -21,13 +21,13 @@ docker exec -i cashly-database psql -U user -d cashly_prod < backup_cashly_data.
 ## 📂 Nextcloud (Database: `nextcloud-db`)
 
 ### Backup
-Esporta l'intero database di Nextcloud:
+Export the entire Nextcloud database:
 ```bash
 docker exec nextcloud-db pg_dump -U nextcloud -d nextcloud > backup_nextcloud.sql
 ```
 
-### Ripristino
-Ripristina il database di Nextcloud:
+### Restore
+Restore the Nextcloud database:
 ```bash
 docker exec -i nextcloud-db psql -U nextcloud -d nextcloud < backup_nextcloud.sql
 ```

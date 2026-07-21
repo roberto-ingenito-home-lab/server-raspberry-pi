@@ -1,49 +1,49 @@
-## Setup Docker su RAID
+## Setup Docker on RAID
 
-### 1. Installa Docker
+### 1. Install Docker
 
 ```bash
-# Aggiorna sistema
+# Update system
 sudo apt update
 sudo apt upgrade -y
 
-# Installa Docker
+# Install Docker
 curl -fsSL https://get.docker.com -o get-docker.sh
 sudo sh get-docker.sh
 
-# Aggiungi utente al gruppo docker
+# Add user to docker group
 sudo usermod -aG docker ingenitor
 
-# Ricarica gruppi (o fai logout/login)
+# Reload groups (or logout/login)
 newgrp docker
 
-# Verifica installazione
+# Verify installation
 docker --version
 docker compose version
 ```
 
-### 2. Ferma Docker (se già avviato)
+### 2. Stop Docker (if already running)
 
 ```bash
 sudo systemctl stop docker
 sudo systemctl stop docker.socket
 ```
 
-### 3. Crea la struttura directory sul RAID
+### 3. Create directory structure on RAID
 
 ```bash
-# Crea directory Docker sul RAID
+# Create Docker directory on RAID
 sudo mkdir -p /mnt/storage/docker/{data,volumes,containers}
 
-# Imposta permessi corretti
+# Set correct permissions
 sudo chown -R root:root /mnt/storage/docker
 sudo chmod 755 /mnt/storage/docker
 ```
 
-### 4. Configura Docker per usare il RAID
+### 4. Configure Docker to use RAID
 
 ```bash
-# Crea/modifica la configurazione daemon
+# Create/modify daemon configuration
 sudo tee /etc/docker/daemon.json > /dev/null <<'EOF'
 {
   "data-root": "/mnt/storage/docker/data",
@@ -56,75 +56,75 @@ sudo tee /etc/docker/daemon.json > /dev/null <<'EOF'
 }
 EOF
 
-# Verifica il contenuto
+# Verify content
 cat /etc/docker/daemon.json
 ```
 
-### 5. Migra i dati esistenti (se esistono)
+### 5. Migrate existing data (if any)
 
 ```bash
-# Se Docker ha già dati su /var/lib/docker
+# If Docker already has data in /var/lib/docker
 if [ -d /var/lib/docker ]; then
   sudo rsync -av /var/lib/docker/ /mnt/storage/docker/data/
 fi
 ```
 
-### 6. Riavvia Docker
+### 6. Restart Docker
 
 ```bash
 sudo systemctl start docker
 
-# Verifica che usi la nuova posizione
+# Verify it uses the new location
 sudo docker info | grep "Docker Root Dir"
-# Dovrebbe mostrare: /mnt/storage/docker/data
+# Should show: /mnt/storage/docker/data
 ```
 
-## Organizza il progetto sul RAID
+## Organize project on RAID
 
-### Crea struttura per i progetti
+### Create structure for projects
 
 ```bash
-# Struttura organizzata
-# Clona i tuoi progetti qui
+# Organized structure
+# Clone your projects here
 mkdir -p /mnt/storage/projects
 cd /mnt/storage/projects
 ```
 
-## Avvia i container
+## Start containers
 
 ```bash
-# Costruisci le immagini personalizzate
+# Build custom images
 docker compose build
 
-# Avvia tutti i servizi in background
-# Il tunnel Cloudflare (cloudflared) si occuperà del routing sicuro dei sottodomini
+# Start all services in background
+# Cloudflare tunnel (cloudflared) will handle secure routing of subdomains
 docker compose up -d
 ```
 
-## Configurazione NextCloud
+## NextCloud Configuration
 
-Entra nel container di NextCloud
+Enter the NextCloud container
 
 ```bash
 docker exec -it --user www-data nextcloud-app bash
 ```
 
-Esegui questi comandi nella shell del container di NextCloud
+Run these commands in the NextCloud container shell
 
 ```bash
-# Cache e Redis
+# Cache and Redis
 php occ config:system:set memcache.local --value='\OC\Memcache\APCu'
 php occ config:system:set memcache.distributed --value='\OC\Memcache\Redis'
 php occ config:system:set memcache.locking --value='\OC\Memcache\Redis'
 php occ config:system:set redis host --value='nextcloud-redis'
 php occ config:system:set redis port --value=6379 --type=integer
 
-# Preview di alta qualità
+# High quality preview
 php occ config:system:set preview_max_x --value=2048 --type=integer
 php occ config:system:set preview_max_y --value=2048 --type=integer
 php occ config:system:set jpeg_quality --value=90 --type=integer
 
-# Abilita preview per vari formati
+# Enable preview for various formats
 php occ config:system:set enabledPreviewProviders 0 --value='OC\Preview\PNG'
 php occ config:system:set enabledPreviewProviders 1 --value='OC\Preview\JPEG'
 php occ config:system:set enabledPreviewProviders 2 --value='OC\Preview\GIF'
@@ -135,16 +135,16 @@ php occ config:system:set enabledPreviewProviders 6 --value='OC\Preview\TXT'
 php occ config:system:set enabledPreviewProviders 7 --value='OC\Preview\MarkDown'
 php occ config:system:set enabledPreviewProviders 8 --value='OC\Preview\PDF'
 
-# Finestra manutenzione
+# Maintenance window
 php occ config:system:set maintenance_window_start --value=3 --type=integer
 
-# Italia
+# Italy
 php occ config:system:set default_phone_region --value='IT'
 
 exit
 ```
 
-Riavvia il container di NextCloud per apportare le modifiche
+Restart the NextCloud container to apply changes
 
 ```bash
 docker compose restart nextcloud

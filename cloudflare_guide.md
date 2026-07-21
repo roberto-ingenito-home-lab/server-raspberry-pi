@@ -1,83 +1,85 @@
-# Configurazione su Cloudflare Zero Trust Dashboard
+# Configuration on Cloudflare Zero Trust Dashboard
 
-Poiché utilizzi il tunnel in modalità remota (gestito tramite `--token TOKEN`), la configurazione del routing e dei sottodomini avviene direttamente dal pannello web di Cloudflare.
+Since you use the tunnel in remote mode (managed via `--token TOKEN`), routing and subdomain configuration takes place directly from the Cloudflare web panel.
 
-## Passi da seguire:
+## Steps to follow:
 
-1. Accedi a [Cloudflare Zero Trust](https://one.dash.cloudflare.com/).
-2. Vai su **Networks** ➔ **Tunnels**.
-3. Seleziona il tuo tunnel e clicca su **Configure**.
-4. Vai nella tab **Public Hostname** e aggiungi le rotte per i tuoi servizi.
+1. Access [Cloudflare Zero Trust](https://one.dash.cloudflare.com/).
+2. Go to **Networks** ➔ **Tunnels**.
+3. Select your tunnel and click on **Configure**.
+4. Go to the **Public Hostname** tab and add the routes for your services.
 
-## Mappa dei Sottodomini e Servizi Docker
+## Map of Subdomains and Docker Services
 
-Configura le seguenti regole di hostname per far corrispondere i sottodomini ai relativi container interni nella rete Docker `common-network`:
+Configure the following hostname rules to match subdomains to their internal containers in the `common-network` Docker network:
 
-| Public Hostname (Sottodominio)    | Path (Opzionale)   | Service Type | URL (Nome Container)                 | Note                            |
+| Public Hostname (Subdomain)       | Path (Optional)    | Service Type | URL (Container Name)                 | Notes                           |
 | :-------------------------------- | :----------------- | :----------- | :----------------------------------- | :------------------------------ |
-| `robertoingenito.com`             | `/robots.txt`      | HTTP         | `http://static-files:80`             | Gestione robots.txt (SEO)       |
-| `robertoingenito.com`             | `/sitemap.xml`     | HTTP         | `http://static-files:80`             | Gestione sitemap.xml (SEO)      |
-| `robertoingenito.com`             | _Vuoto_            | HTTP         | `http://portfolio-app:80`            | Portfolio Principale            |
-| `cashly.robertoingenito.com`      | `/cashly-api*`     | HTTP         | `http://cashly-back-end:80`          | Backend API di Cashly           |
-| `cashly.robertoingenito.com`      | `/swagger*`        | HTTP         | `http://cashly-back-end:80`          | Documentazione API              |
-| `cashly.robertoingenito.com`      | _Vuoto_            | HTTP         | `http://cashly-front-end:80`         | Frontend di Cashly              |
-| `mr-white.robertoingenito.com`    | `/mr-white-api*`   | HTTP         | `http://mr-white-back-end:80`        | Backend WebSockets              |
-| `mr-white.robertoingenito.com`    | _Vuoto_            | HTTP         | `http://mr-white-front-end:3000`     | Frontend di Mr. White           |
-| `cloud.robertoingenito.com`       | _Vuoto_            | HTTP         | `http://nextcloud-app:80`            | Nextcloud Storage               |
-| `timesheet.robertoingenito.com`   | _Vuoto_            | HTTP         | `http://fortil-excel-timesheet:3000` | Timesheet utility               |
-| `calcolatori.robertoingenito.com` | _Vuoto_            | HTTP         | `http://static-files:80`             | Pagine utility statiche         |
-| `lafa.robertoingenito.com`        | `/lafa-tools-api*` | HTTP         | `http://lafa-tools-back-end:8080`    | Backend API di LAFA Tools       |
-| `lafa.robertoingenito.com`        | `/swagger*`        | HTTP         | `http://lafa-tools-back-end:8080`    | Documentazione API LAFA         |
-| `lafa.robertoingenito.com`        | _Vuoto_            | HTTP         | `http://lafa-tools-front-end:80`     | Frontend di LAFA Tools          |
-| `docmost.robertoingenito.com`     | _Vuoto_            | HTTP         | `http://docmost:3000`                | Wiki e documentazione (Docmost) |
+| `robertoingenito.com`             | `/robots.txt`      | HTTP         | `http://static-files:80`             | robots.txt management (SEO)     |
+| `robertoingenito.com`             | `/sitemap.xml`     | HTTP         | `http://static-files:80`             | sitemap.xml management (SEO)    |
+| `robertoingenito.com`             | _Empty_            | HTTP         | `http://portfolio-app:80`            | Main Portfolio                  |
+| `cashly.robertoingenito.com`      | `/cashly-api*`     | HTTP         | `http://cashly-back-end:80`          | Cashly API Backend              |
+| `cashly.robertoingenito.com`      | `/swagger*`        | HTTP         | `http://cashly-back-end:80`          | API Documentation               |
+| `cashly.robertoingenito.com`      | _Empty_            | HTTP         | `http://cashly-front-end:80`         | Cashly Frontend                 |
+| `mr-white.robertoingenito.com`    | `/mr-white-api*`   | HTTP         | `http://mr-white-back-end:80`        | WebSockets Backend              |
+| `mr-white.robertoingenito.com`    | _Empty_            | HTTP         | `http://mr-white-front-end:3000`     | Mr. White Frontend              |
+| `cloud.robertoingenito.com`       | _Empty_            | HTTP         | `http://nextcloud-app:80`            | Nextcloud Storage               |
+| `timesheet.robertoingenito.com`   | _Empty_            | HTTP         | `http://fortil-excel-timesheet:3000` | Timesheet utility               |
+| `calcolatori.robertoingenito.com` | _Empty_            | HTTP         | `http://static-files:80`             | Static utility pages            |
+| `lafa.robertoingenito.com`        | `/lafa-tools-api*` | HTTP         | `http://lafa-tools-back-end:8080`    | LAFA Tools API Backend          |
+| `lafa.robertoingenito.com`        | `/swagger*`        | HTTP         | `http://lafa-tools-back-end:8080`    | LAFA API Documentation          |
+| `lafa.robertoingenito.com`        | _Empty_            | HTTP         | `http://lafa-tools-front-end:80`     | LAFA Tools Frontend             |
+| `docmost.robertoingenito.com`     | _Empty_            | HTTP         | `http://docmost:3000`                | Wiki and documentation (Docmost)|
 
 > [!IMPORTANT]
-> **ORDINE DELLE REGISTRAZIONI (ROTTE) SU CLOUDFLARE:**
-> L'ordine con cui le rotte sono posizionate in Cloudflare è fondamentale. Cloudflare valuta le regole dall'alto verso il basso:
+> **ORDER OF RECORDS (ROUTES) ON CLOUDFLARE**
+> 
+> The order in which routes are positioned in Cloudflare is fundamental. Cloudflare evaluates rules from top to bottom:
 >
-> 1. Le rotte con un percorso specifico (come `/robots.txt`, `/sitemap.xml`, `/cashly-api*` o `/swagger*`) **devono essere posizionate SOPRA** alla rotta generica con percorso vuoto (`Vuoto`).
-> 2. Se la rotta con percorso `Vuoto` (che punta al frontend) si trova sopra le altre, Cloudflare catturerà tutto il traffico indirizzato a quel sottodominio e lo invierà al frontend, ignorando le regole successive per le API, Swagger o i file SEO.
+> 1. Routes with a specific path (such as `/robots.txt`, `/sitemap.xml`, `/cashly-api*` or `/swagger*`) **must be placed ABOVE** the generic route with an empty path (`Empty`).
+> 2. If the route with an `Empty` path (which points to the frontend) is placed above the others, Cloudflare will capture all traffic directed to that subdomain and send it to the frontend, ignoring subsequent rules for APIs, Swagger, or SEO files.
 
 > [!NOTE]
-> Per le regole con path (es. `/cashly-api*`), Cloudflare inoltrerà automaticamente il path al container. Questo mantiene l'API ed il frontend sullo stesso sottodominio, eliminando problemi di CORS.
+> For rules with a path (e.g. `/cashly-api*`), Cloudflare will automatically forward the path to the container. This keeps the API and frontend on the same subdomain, eliminating CORS issues.
 
 > [!IMPORTANT]
-> **ABILITAZIONE WEBSOCKET PER INSTRADAMENTO IN TEMPO REALE:**
-> Servizi come **Docmost** (per la collaborazione e sincronizzazione in tempo reale) e **Mr. White** (tramite SignalR) dipendono strettamente da connessioni WebSocket persistenti.
-> Per ciascuno di questi sottodomini, nella console web di Cloudflare Zero Trust:
+> **ENABLE WEBSOCKETS FOR REAL-TIME ROUTING**
+> 
+> Services like **Docmost** (for real-time collaboration and synchronization) and **Mr. White** (via SignalR) rely strictly on persistent WebSocket connections.
+> For each of these subdomains, in the Cloudflare Zero Trust web console:
 >
-> 1. Entra in modifica della rotta (`Public Hostname`).
-> 2. Espandi la sezione **Additional application settings**.
-> 3. Clicca su **HTTP Settings**.
-> 4. Attiva lo switch **Websockets** (impostalo su _Enabled_). Se non viene abilitato, l'interfaccia dell'applicazione si avvierà ma non sarà in grado di stabilire la connessione in tempo reale e non sincronizzerà le note.
+> 1. Enter route editing mode (`Public Hostname`).
+> 2. Expand the **Additional application settings** section.
+> 3. Click on **HTTP Settings**.
+> 4. Activate the **Websockets** switch (set it to _Enabled_). If not enabled, the application interface will start but it will not be able to establish a real-time connection and will not synchronize notes.
 
 > [!TIP]
-> Se i tuoi repository saranno privati su GitHub (e quindi le immagini GHCR richiederanno autenticazione per essere scaricate), ricordati di:
+> If your repositories will be private on GitHub (and thus GHCR images will require authentication to be downloaded), remember to:
 >
-> 1. Fare il login sul tuo server tramite shell con: `docker login ghcr.io -u IL_TUO_USERNAME -p IL_TUO_TOKEN_GITHUB`
-> 2. Decommentare la riga del volume nel servizio `watchtower` per montare la configurazione di Docker del server:
+> 1. Log in to your server via shell with: `docker login ghcr.io -u YOUR_USERNAME -p YOUR_GITHUB_TOKEN`
+> 2. Uncomment the volume line in the `watchtower` service to mount the server's Docker configuration:
 >    ```yaml
 >    volumes:
 >      - /var/run/docker.sock:/var/run/docker.sock
 >      - ~/.docker/config.json:/config.json
 >    ```
->    In questo modo Watchtower userà automaticamente le tue credenziali per aggiornare le app private!
+>    This way Watchtower will automatically use your credentials to update private apps.
 
 ---
 
-## 📈 Gestione SEO e Google Search Console
+## 📈 SEO Management and Google Search Console
 
-Abbiamo configurato il server Nginx in modalità centralizzata per servire i file di indicizzazione SEO esclusivamente per il portfolio principale `robertoingenito.com` ed escludere tutti gli altri sottodomini.
+An [Nginx](static-files/nginx.conf) server has been configured in centralized mode to serve SEO indexing files exclusively for the main portfolio `robertoingenito.com` and exclude all other subdomains.
 
-### Struttura dei file sul server
+### File Structure on the Server
 
-I file SEO si trovano nella cartella `./seos/` del repository:
+SEO files are located in the `./seos/` folder of the repository:
 
-- **`seos/default/robots.txt`**: File generico che impedisce l'indicizzazione (`Disallow: /`). Viene servito a tutti i sottodomini non configurati espressamente (es. `calcolatori.`, `cashly.`, `cloud.`).
-- **`seos/robertoingenito.com/robots.txt` & `sitemap.xml`**: Permettono l'indicizzazione ed indicano a Googlebot la sitemap del portfolio principale.
+- **`seos/default/robots.txt`**: Generic file that prevents indexing (`Disallow: /`). It is served to all explicitly unconfigured subdomains (e.g. `calcolatori.`, `cashly.`, `cloud.`).
+- **`seos/robertoingenito.com/robots.txt` & `sitemap.xml`**: Allow indexing and indicate the main portfolio sitemap to Googlebot.
 
-### Procedura di attivazione:
+### Activation Procedure:
 
-1. **Rotte Cloudflare**: Assicurati di configurare le rotte per `/robots.txt` e `/sitemap.xml` di `robertoingenito.com` indirizzandole a `http://static-files:80` (inserendole **in alto** rispetto a quella generica del portfolio).
-2. **Verifica Dominio su GSC**: Aggiungi la proprietà **Dominio** per `robertoingenito.com` in Google Search Console
-3. **Invia la Sitemap**: Nel pannello Search Console di `robertoingenito.com`, vai su **Sitemaps** ed invia l'URL `https://robertoingenito.com/sitemap.xml`.
+1. **Cloudflare Routes**: Make sure to configure the routes for `/robots.txt` and `/sitemap.xml` for `robertoingenito.com` directing them to `http://static-files:80` (placing them **above** the generic portfolio route).
+2. **Domain Verification on GSC**: Add the **Domain** property for `robertoingenito.com` in Google Search Console.
+3. **Submit the Sitemap**: In the Search Console panel for `robertoingenito.com`, go to **Sitemaps** and submit the URL `https://robertoingenito.com/sitemap.xml`.

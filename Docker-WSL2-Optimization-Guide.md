@@ -1,54 +1,54 @@
-# Pulizia e Ottimizzazione Spazio Docker su WSL2
+# Docker Space Cleanup and Optimization on WSL2
 
-Questa guida spiega come analizzare lo spazio occupato da Docker, come pulirlo in sicurezza e come ridurre le dimensioni reali del file `.vhdx` su Windows.
+This guide explains how to analyze the space used by Docker, how to clean it safely, and how to reduce the actual size of the `.vhdx` file on Windows.
 
-## 1. Analisi dello Spazio
+## 1. Space Analysis
 
-Prima di procedere, identifica cosa occupa spazio con:
+Before proceeding, identify what is taking up space with:
 
 ```bash
 docker system df
 ```
 
-## 2. Pulizia
+## 2. Cleanup
 
-### A. Svuotare la Build Cache (Sicuro)
+### A. Clear the Build Cache (Safe)
 
-La cache di build può accumulare decine di GB. Eliminarla non tocca né i container né le immagini finali:
+The build cache can accumulate tens of GBs. Deleting it does not affect containers or final images:
 
 ```bash
 docker builder prune -a
 ```
 
-### B. Eliminare i Volumi inutilizzati
+### B. Delete unused Volumes
 
-Rimuove solo i volumi che non sono montati in **nessun** container (nemmeno quelli fermi):
+Removes only volumes that are not mounted in **any** container (not even stopped ones):
 
 ```bash
 docker volume prune
 ```
 
-### C. Eliminare Immagini non utilizzate
+### C. Delete unused Images
 
-Per eliminare solo le immagini che non sono associate ad alcun container (nemmeno a quelli fermi):
+To delete only images that are not associated with any container (not even stopped ones):
 
 ```bash
 docker image prune -a
 ```
 
-_Nota: Se un container è fermo (Stopped), la sua immagine è considerata "in uso" e non verrà rimossa._
+_Note: If a container is stopped, its image is considered "in use" and will not be removed._
 
-## 3. Compattazione del disco WSL2 (ext4.vhdx)
+## 3. WSL2 disk compaction (ext4.vhdx)
 
-Anche dopo la pulizia, Windows non recupera lo spazio automaticamente. È necessario compattare il file del disco virtuale.
+Even after cleanup, Windows does not recover space automatically. It is necessary to compact the virtual disk file.
 
-1. **Chiudi Docker Desktop** (Tasto destro sull'icona -> Quit).
-2. **Spegni WSL** dal terminale:
+1. **Close Docker Desktop** (Right-click on the icon -> Quit).
+2. **Shut down WSL** from the terminal:
    ```bash
    wsl --shutdown
    ```
-3. Apri il terminale come Amministratore e digita `diskpart`.
-4. Esegui i seguenti comandi uno alla volta (sostituisci `<username>` con il tuo nome utente di Windows):
+3. Open the terminal as Administrator and type `diskpart`.
+4. Run the following commands one at a time (replace `<username>` with your Windows username):
    - ```bash
      select vdisk file="C:\Users\<username>\AppData\Local\Docker\wsl\disk\docker_data.vhdx"
      ```
@@ -67,17 +67,17 @@ Anche dopo la pulizia, Windows non recupera lo spazio automaticamente. È necess
 
 # Troubleshooting
 
-Se il file `.vhdx` non si restringe nonostante la pulizia e il `compact`, significa che i blocchi orfani sono bloccati all'interno del motore di Docker.
+If the `.vhdx` file does not shrink despite the cleanup and `compact`, it means that orphan blocks are stuck inside the Docker engine.
 
-**Procedura di sblocco:**
+**Unblock procedure:**
 
-1. Assicurati che Docker Desktop sia avviato.
-2. Esegui il "trim" forzato entrando nel namespace del sistema ospite:
+1. Ensure Docker Desktop is running.
+2. Run a forced "trim" by entering the host system namespace:
    ```bash
    docker run --rm --privileged --pid=host alpine nsenter -t 1 -m -u -n -i fstrim -av
    ```
-3. Una volta terminato, chiudi Docker e spegni WSL:
+3. Once finished, close Docker and shut down WSL:
    ```bash
    wsl --shutdown
    ```
-4. Procedi con la compattazione finale tramite `diskpart`
+4. Proceed with the final compaction via `diskpart`
