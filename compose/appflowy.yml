@@ -105,7 +105,7 @@ services:
       - GOTRUE_JWT_EXP=604800
       - GOTRUE_JWT_ADMIN_GROUP_NAME=supabase_admin
       - GOTRUE_DB_DRIVER=postgres
-      - GOTRUE_DATABASE_URL=postgres://${APPFLOWY_DB_USER}:${APPFLOWY_DB_PASSWORD}@appflowy-db:5432/${APPFLOWY_DB_NAME}?search_path=auth
+      - DATABASE_URL=postgres://${APPFLOWY_DB_USER}:${APPFLOWY_DB_PASSWORD}@appflowy-db:5432/${APPFLOWY_DB_NAME}?search_path=auth
       - API_EXTERNAL_URL=https://${APPFLOWY_FQDN}/gotrue
       - GOTRUE_SITE_URL=appflowy-flutter://
       - GOTRUE_URI_ALLOW_LIST=**
