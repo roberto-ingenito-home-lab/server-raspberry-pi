@@ -57,6 +57,14 @@ Wiki e documentazione collaborativa (fork personalizzato con modifiche custom).
 - **Stack**: Node.js/NestJS, React, PostgreSQL, Redis
 - **Repo**: [docmost](https://github.com/roberto-ingenito-home-lab/docmost)
 
+### 📓 AppFlowy Cloud
+
+Workspace e note-taking collaborativo (in fase di integrazione per sostituire Docmost).
+
+- **Stack**: AppFlowy Cloud Backend, GoTrue Auth, PostgreSQL (con pgvector), Redis, MinIO (storage S3)
+- **Path**: `https://appflowy.robertoingenito.com`
+
+
 ### 📂 Nextcloud
 
 Cloud storage personale.
@@ -118,12 +126,15 @@ docker compose --env-file .env.dev up --build -d
 ```
 server-raspberry-pi/
 ├── docker-compose.yml          # Compose principale (include i file dalla cartella compose/)
+├── appflowy/                   # Configurazione gateway Nginx interno per AppFlowy
+│   └── nginx.conf
 ├── compose/                    # File compose modulari per ogni servizio
 │   ├── infrastructure.yml      # Cloudflare, Watchtower, Static Files
 │   ├── cashly.yml
 │   ├── mr-white.yml
 │   ├── lafa-tools.yml
 │   ├── docmost.yml
+│   ├── appflowy.yml            # Servizi della suite AppFlowy Cloud
 │   ├── nextcloud.yml
 │   ├── portfolio.yml
 │   └── fortil-excel-timesheet.yml

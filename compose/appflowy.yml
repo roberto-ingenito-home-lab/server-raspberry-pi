@@ -1,0 +1,266 @@
+services:
+  # --- APPFLOWY GATEWAY (NGINX) ---
+  # Internal Nginx that routes public requests to the individual microservices.
+  # Handled externally by Cloudflare Tunnel, so it only needs to listen on port 80.
+  appflowy-nginx:
+    image: nginx:alpine
+    container_name: appflowy-nginx
+    expose:
+      - "80"
+    volumes:
+      - ../appflowy/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      appflowy-cloud:
+        condition: service_healthy
+      appflowy-gotrue:
+        condition: service_healthy
+      appflowy-admin:
+        condition: service_started
+      appflowy-web:
+        condition: service_started
+      appflowy-minio:
+        condition: service_healthy
+    networks:
+      - common-network
+    restart: unless-stopped
+
+  # --- POSTGRES DATABASE ---
+  # Dedicated PostgreSQL database with pgvector support required by AppFlowy Search.
+  appflowy-db:
+    image: pgvector/pgvector:pg16
+    container_name: appflowy-db
+    expose:
+      - "5432"
+    environment:
+      - POSTGRES_USER=${APPFLOWY_DB_USER}
+      - POSTGRES_PASSWORD=${APPFLOWY_DB_PASSWORD}
+      - POSTGRES_DB=${APPFLOWY_DB_NAME}
+      - POSTGRES_HOST=appflowy-db
+    volumes:
+      - appflowy_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${APPFLOWY_DB_USER}", "-d", "${APPFLOWY_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - common-network
+    restart: unless-stopped
+
+  # --- REDIS CACHE ---
+  # Dedicated Redis cache for AppFlowy Cloud and workers.
+  appflowy-redis:
+    image: redis:alpine
+    container_name: appflowy-redis
+    expose:
+      - "6379"
+    volumes:
+      - appflowy_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - common-network
+    restart: unless-stopped
+
+  # --- MINIO STORAGE ---
+  # S3-compatible file storage for document attachments, web assets and imports.
+  appflowy-minio:
+    image: minio/minio
+    container_name: appflowy-minio
+    expose:
+      - "9000"
+      - "9001"
+    environment:
+      - MINIO_ROOT_USER=${APPFLOWY_MINIO_ACCESS_KEY}
+      - MINIO_ROOT_PASSWORD=${APPFLOWY_MINIO_SECRET_KEY}
+      - MINIO_BROWSER_REDIRECT_URL=https://${APPFLOWY_FQDN}/minio
+    command: server /data --console-address ":9001"
+    volumes:
+      - appflowy_minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    networks:
+      - common-network
+    restart: unless-stopped
+
+  # --- GOTRUE AUTH ---
+  # Supabase's authentication service customized for AppFlowy users management.
+  appflowy-gotrue:
+    image: appflowyinc/gotrue:latest
+    container_name: appflowy-gotrue
+    expose:
+      - "9999"
+    environment:
+      - GOTRUE_ADMIN_EMAIL=${APPFLOWY_ADMIN_EMAIL}
+      - GOTRUE_ADMIN_PASSWORD=${APPFLOWY_ADMIN_PASSWORD}
+      - GOTRUE_JWT_SECRET=${APPFLOWY_JWT_SECRET}
+      - GOTRUE_JWT_EXP=604800
+      - GOTRUE_JWT_ADMIN_GROUP_NAME=supabase_admin
+      - GOTRUE_DB_DRIVER=postgres
+      - GOTRUE_DATABASE_URL=postgres://${APPFLOWY_DB_USER}:${APPFLOWY_DB_PASSWORD}@appflowy-db:5432/${APPFLOWY_DB_NAME}?search_path=auth
+      - API_EXTERNAL_URL=https://${APPFLOWY_FQDN}/gotrue
+      - GOTRUE_SITE_URL=appflowy-flutter://
+      - GOTRUE_URI_ALLOW_LIST=**
+      - GOTRUE_DISABLE_SIGNUP=false
+    depends_on:
+      appflowy-db:
+        condition: service_healthy
+    healthcheck:
+      test: "curl --fail http://127.0.0.1:9999/health || exit 1"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - common-network
+    restart: unless-stopped
+
+  # --- APPFLOWY CLOUD SERVER ---
+  # The core API server of AppFlowy Cloud handling real-time sync, workspaces and collaboration.
+  appflowy-cloud:
+    image: appflowyinc/appflowy_cloud:latest
+    container_name: appflowy-cloud
+    expose:
+      - "8000"
+    environment:
+      - APPFLOWY_ENVIRONMENT=production
+      - APPFLOWY_DATABASE_URL=postgres://${APPFLOWY_DB_USER}:${APPFLOWY_DB_PASSWORD}@appflowy-db:5432/${APPFLOWY_DB_NAME}
+      - APPFLOWY_REDIS_URI=redis://appflowy-redis:6379
+      - APPFLOWY_GOTRUE_JWT_SECRET=${APPFLOWY_JWT_SECRET}
+      - APPFLOWY_GOTRUE_BASE_URL=http://appflowy-gotrue:9999
+      - APPFLOWY_BASE_URL=https://${APPFLOWY_FQDN}
+      - APPFLOWY_WEBSOCKET_BASE_URL=wss://${APPFLOWY_FQDN}/ws/v2
+      - APPFLOWY_ACCESS_CONTROL=true
+      - APPFLOWY_DATABASE_MAX_CONNECTIONS=40
+      - APPFLOWY_S3_USE_MINIO=true
+      - APPFLOWY_S3_CREATE_BUCKET=true
+      - APPFLOWY_S3_MINIO_URL=http://appflowy-minio:9000
+      - APPFLOWY_S3_ACCESS_KEY=${APPFLOWY_MINIO_ACCESS_KEY}
+      - APPFLOWY_S3_SECRET_KEY=${APPFLOWY_MINIO_SECRET_KEY}
+      - APPFLOWY_S3_BUCKET=appflowy
+      - APPFLOWY_S3_PRESIGNED_URL_ENDPOINT=https://${APPFLOWY_FQDN}/minio-api
+      - APPFLOWY_WEB_URL=https://${APPFLOWY_FQDN}
+      - AI_ENABLED=false
+      - APPFLOWY_SEARCH_SERVICE_URL=http://appflowy-search:4002
+    depends_on:
+      appflowy-gotrue:
+        condition: service_healthy
+      appflowy-redis:
+        condition: service_healthy
+      appflowy-minio:
+        condition: service_healthy
+    healthcheck:
+      test: "curl --fail http://127.0.0.1:8000/api/health || exit 1"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - common-network
+    restart: unless-stopped
+
+  # --- APPFLOWY SEARCH SERVICE ---
+  # Provides indexing and full-text keyword search of documents.
+  appflowy-search:
+    image: appflowyinc/appflowy_search:latest
+    container_name: appflowy-search
+    expose:
+      - "4002"
+    environment:
+      - RUST_LOG=info
+      - APPFLOWY_SEARCH_HOST=[::]
+      - APPFLOWY_SEARCH_PORT=4002
+      - APPFLOWY_SEARCH_DATABASE_URL=postgres://${APPFLOWY_DB_USER}:${APPFLOWY_DB_PASSWORD}@appflowy-db:5432/${APPFLOWY_DB_NAME}
+      - APPFLOWY_SEARCH_REDIS_URL=redis://appflowy-redis:6379
+      - APPFLOWY_S3_USE_MINIO=true
+      - APPFLOWY_S3_MINIO_URL=http://appflowy-minio:9000
+      - APPFLOWY_S3_ACCESS_KEY=${APPFLOWY_MINIO_ACCESS_KEY}
+      - APPFLOWY_S3_SECRET_KEY=${APPFLOWY_MINIO_SECRET_KEY}
+      - APPFLOWY_S3_BUCKET=appflowy
+      - APPFLOWY_KEYWORD_SEARCH_ENABLED=true
+      - APPFLOWY_KEYWORD_INDEX_DIR=/var/lib/appflowy/keyword_index
+      - APPFLOWY_GOTRUE_JWT_SECRET=${APPFLOWY_JWT_SECRET}
+    volumes:
+      - appflowy_search_data:/var/lib/appflowy/keyword_index
+    depends_on:
+      appflowy-db:
+        condition: service_healthy
+    networks:
+      - common-network
+    restart: unless-stopped
+
+  # --- APPFLOWY BACKGROUND WORKER ---
+  # Handles background imports and periodic cleanups.
+  appflowy-worker:
+    image: appflowyinc/appflowy_worker:latest
+    container_name: appflowy-worker
+    environment:
+      - RUST_LOG=info
+      - APPFLOWY_ENVIRONMENT=production
+      - APPFLOWY_WORKER_REDIS_URL=redis://appflowy-redis:6379
+      - APPFLOWY_WORKER_DATABASE_URL=postgres://${APPFLOWY_DB_USER}:${APPFLOWY_DB_PASSWORD}@appflowy-db:5432/${APPFLOWY_DB_NAME}
+      - APPFLOWY_WORKER_DATABASE_NAME=${APPFLOWY_DB_NAME}
+      - APPFLOWY_S3_USE_MINIO=true
+      - APPFLOWY_S3_MINIO_URL=http://appflowy-minio:9000
+      - APPFLOWY_S3_ACCESS_KEY=${APPFLOWY_MINIO_ACCESS_KEY}
+      - APPFLOWY_S3_SECRET_KEY=${APPFLOWY_MINIO_SECRET_KEY}
+      - APPFLOWY_S3_BUCKET=appflowy
+    depends_on:
+      appflowy-cloud:
+        condition: service_healthy
+    networks:
+      - common-network
+    restart: unless-stopped
+
+  # --- APPFLOWY WEB FRONTEND ---
+  # Serve static web frontend interface.
+  appflowy-web:
+    image: appflowyinc/appflowy_web:latest
+    container_name: appflowy-web
+    expose:
+      - "80"
+    environment:
+      - APPFLOWY_BASE_URL=https://${APPFLOWY_FQDN}
+      - APPFLOWY_GOTRUE_BASE_URL=https://${APPFLOWY_FQDN}/gotrue
+      - APPFLOWY_WS_BASE_URL=wss://${APPFLOWY_FQDN}/ws/v2
+    depends_on:
+      appflowy-cloud:
+        condition: service_healthy
+    networks:
+      - common-network
+    restart: unless-stopped
+
+  # --- APPFLOWY ADMIN FRONTEND ---
+  # Administration Console interface to manage users and settings.
+  appflowy-admin:
+    image: appflowyinc/admin_frontend:latest
+    container_name: appflowy-admin
+    expose:
+      - "3000"
+    environment:
+      - APPFLOWY_GOTRUE_BASE_URL=http://appflowy-gotrue:9999
+      - APPFLOWY_BASE_URL=http://appflowy-cloud:8000
+    depends_on:
+      appflowy-cloud:
+        condition: service_healthy
+    networks:
+      - common-network
+    restart: unless-stopped
+
+networks:
+  common-network:
+    external: true
+    name: common-network
+
+volumes:
+  appflowy_db_data:
+  appflowy_minio_data:
+  appflowy_search_data:
+  appflowy_redis_data:
