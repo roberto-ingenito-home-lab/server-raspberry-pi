@@ -111,6 +111,7 @@ services:
       - GOTRUE_URI_ALLOW_LIST=**
       - GOTRUE_DISABLE_SIGNUP=false
       - PORT=9999
+      - GOTRUE_MAILER_AUTOCONFIRM=true
     depends_on:
       appflowy-db:
         condition: service_healthy
