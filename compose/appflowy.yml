@@ -110,6 +110,7 @@ services:
       - GOTRUE_SITE_URL=appflowy-flutter://
       - GOTRUE_URI_ALLOW_LIST=**
       - GOTRUE_DISABLE_SIGNUP=false
+      - PORT=9999
     depends_on:
       appflowy-db:
         condition: service_healthy
