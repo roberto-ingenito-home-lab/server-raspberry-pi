@@ -532,3 +532,37 @@ sudo dd if=/mnt/storage/test.img of=/dev/null bs=1M
 # Cleanup
 rm /mnt/storage/test.img
 ```
+
+## NVMe RAID Stability & Monthly Scrub Fix (Raspberry Pi 5)
+
+To prevent NVMe controllers from dropping off the PCIe bus or crashing during the monthly `mdadm` data check (`mdcheck` / `checkarray`), apply the following stability tweaks:
+
+### 1. Disable NVMe Autonomous Power State Transitions (APST)
+NVMe power management causes controller reset failures under prolonged IO scrub on Raspberry Pi PCIe HATs.
+
+Edit `/boot/firmware/cmdline.txt` (or `/boot/cmdline.txt`) and append:
+```text
+nvme_core.default_ps_max_latency_us=0
+```
+
+### 2. Limit RAID Data Check Speed Limit
+Prevent thermal throttling and power spikes during background scrub operations:
+
+Create `/etc/sysctl.d/99-raid-speed.conf`:
+```ini
+dev.raid.speed_limit_min = 1000
+dev.raid.speed_limit_max = 50000
+```
+Apply with:
+```bash
+sudo sysctl -p /etc/sysctl.d/99-raid-speed.conf
+```
+
+### 3. Re-adding a Failed NVMe Disk after Reboot
+If an NVMe dropped due to reset failure (`CSTS=0x1` / `FLR timeout`):
+```bash
+# After reboot:
+sudo mdadm /dev/md127 --remove failed
+sudo mdadm /dev/md127 --add /dev/nvme1n1
+```
+
