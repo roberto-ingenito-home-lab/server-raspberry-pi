@@ -6,7 +6,6 @@ include:
   - ./compose/portfolio.yml
   - ./compose/mr-white.yml
   - ./compose/lafa-tools.yml
-  - ./compose/appflowy.yml
 
 # --- NETWORKS ---
 # Rete comune utilizzata per la comunicazione tra tutti i servizi

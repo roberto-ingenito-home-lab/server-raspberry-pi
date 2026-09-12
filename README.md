@@ -57,14 +57,6 @@ Wiki e documentazione collaborativa (fork personalizzato con modifiche custom).
 - **Stack**: Node.js/NestJS, React, PostgreSQL, Redis
 - **Repo**: [docmost](https://github.com/roberto-ingenito-home-lab/docmost)
 
-### 📓 AppFlowy Cloud
-
-Workspace e note-taking collaborativo (in fase di integrazione per sostituire Docmost).
-
-- **Stack**: AppFlowy Cloud Backend, GoTrue Auth, PostgreSQL (con pgvector), Redis, MinIO (storage S3)
-- **Path**: `https://appflowy.robertoingenito.com`
-
-
 ### 📂 Nextcloud
 
 Cloud storage personale.
@@ -72,12 +64,6 @@ Cloud storage personale.
 - **Stack**: PHP/Apache, PostgreSQL, Redis
 - **Storage**: Unità RAID esterna (`/mnt/storage/nextcloud/data`)
 - **Path**: `/cloud/`
-
-### 📊 Fortil Excel Timesheet
-
-Tool per la gestione dei fogli ore (Vite/React) → `/timesheet/`
-
-- **Repo**: [fortil-excel-timesheet](https://github.com/roberto-ingenito-home-lab/fortil-excel-timesheet)
 
 ### 🧮 Calcolatori Statici
 
@@ -126,18 +112,14 @@ docker compose --env-file .env.dev up --build -d
 ```
 server-raspberry-pi/
 ├── docker-compose.yml          # Compose principale (include i file dalla cartella compose/)
-├── appflowy/                   # Configurazione gateway Nginx interno per AppFlowy
-│   └── nginx.conf
 ├── compose/                    # File compose modulari per ogni servizio
 │   ├── infrastructure.yml      # Cloudflare, Watchtower, Static Files
 │   ├── cashly.yml
 │   ├── mr-white.yml
 │   ├── lafa-tools.yml
 │   ├── docmost.yml
-│   ├── appflowy.yml            # Servizi della suite AppFlowy Cloud
 │   ├── nextcloud.yml
-│   ├── portfolio.yml
-│   └── fortil-excel-timesheet.yml
+│   └── portfolio.yml
 ├── calcolatore-finanze/        # Codice sorgente calcolatore finanze
 ├── calcolatore-tasse/          # Codice sorgente calcolatore tasse
 ├── seos/                       # File SEO (robots.txt, sitemap.xml)

@@ -24,13 +24,11 @@ Configure the following hostname rules to match subdomains to their internal con
 | `mr-white.robertoingenito.com`    | `/mr-white-api*`   | HTTP         | `http://mr-white-back-end:80`        | WebSockets Backend              |
 | `mr-white.robertoingenito.com`    | _Empty_            | HTTP         | `http://mr-white-front-end:3000`     | Mr. White Frontend              |
 | `cloud.robertoingenito.com`       | _Empty_            | HTTP         | `http://nextcloud-app:80`            | Nextcloud Storage               |
-| `timesheet.robertoingenito.com`   | _Empty_            | HTTP         | `http://fortil-excel-timesheet:3000` | Timesheet utility               |
 | `calcolatori.robertoingenito.com` | _Empty_            | HTTP         | `http://static-files:80`             | Static utility pages            |
 | `lafa.robertoingenito.com`        | `/lafa-tools-api*` | HTTP         | `http://lafa-tools-back-end:8080`    | LAFA Tools API Backend          |
 | `lafa.robertoingenito.com`        | `/swagger*`        | HTTP         | `http://lafa-tools-back-end:8080`    | LAFA API Documentation          |
 | `lafa.robertoingenito.com`        | _Empty_            | HTTP         | `http://lafa-tools-front-end:80`     | LAFA Tools Frontend             |
 | `docmost.robertoingenito.com`     | _Empty_            | HTTP         | `http://docmost:3000`                | Wiki and documentation (Docmost)|
-| `appflowy.robertoingenito.com`    | _Empty_            | HTTP         | `http://appflowy-nginx:80`           | Workspace collaborativo (AppFlowy)|
 
 > [!IMPORTANT]
 > **ORDER OF RECORDS (ROUTES) ON CLOUDFLARE**
@@ -46,7 +44,7 @@ Configure the following hostname rules to match subdomains to their internal con
 > [!IMPORTANT]
 > **ENABLE WEBSOCKETS FOR REAL-TIME ROUTING**
 > 
-> Services like **Docmost** and **AppFlowy** (for real-time collaboration and synchronization) and **Mr. White** (via SignalR) rely strictly on persistent WebSocket connections.
+> Services like **Docmost** (for real-time collaboration and synchronization) and **Mr. White** (via SignalR) rely strictly on persistent WebSocket connections.
 > For each of these subdomains, in the Cloudflare Zero Trust web console:
 >
 > 1. Enter route editing mode (`Public Hostname`).
