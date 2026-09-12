@@ -4,7 +4,6 @@ include:
   - ./compose/cashly.yml
   - ./compose/nextcloud.yml
   - ./compose/portfolio.yml
-  - ./compose/fortil-excel-timesheet.yml
   - ./compose/mr-white.yml
   - ./compose/lafa-tools.yml
   - ./compose/appflowy.yml
