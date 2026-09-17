@@ -29,6 +29,7 @@ Configure the following hostname rules to match subdomains to their internal con
 | `lafa.robertoingenito.com`        | `/swagger*`        | HTTP         | `http://lafa-tools-back-end:8080`    | LAFA API Documentation          |
 | `lafa.robertoingenito.com`        | _Empty_            | HTTP         | `http://lafa-tools-front-end:80`     | LAFA Tools Frontend             |
 | `docmost.robertoingenito.com`     | _Empty_            | HTTP         | `http://docmost:3000`                | Wiki and documentation (Docmost)|
+| `watchtower.robertoingenito.com`  | _Empty_            | HTTP         | `http://watchtower:8080`             | Watchtower Webhook (automated deployments)|
 
 > [!IMPORTANT]
 > **ORDER OF RECORDS (ROUTES) ON CLOUDFLARE**
@@ -56,13 +57,53 @@ Configure the following hostname rules to match subdomains to their internal con
 > If your repositories will be private on GitHub (and thus GHCR images will require authentication to be downloaded), remember to:
 >
 > 1. Log in to your server via shell with: `docker login ghcr.io -u YOUR_USERNAME -p YOUR_GITHUB_TOKEN`
-> 2. Uncomment the volume line in the `watchtower` service to mount the server's Docker configuration:
+> 2. Ensure the Docker config volume is mounted in the `watchtower` service:
 >    ```yaml
 >    volumes:
 >      - /var/run/docker.sock:/var/run/docker.sock
 >      - ~/.docker/config.json:/config.json
 >    ```
 >    This way Watchtower will automatically use your credentials to update private apps.
+
+---
+
+## ⚡ Watchtower Webhook (`WATCHTOWER_TOKEN` Secret Configuration)
+
+To enable GitHub Actions workflows to authenticate against Watchtower's HTTP API, configure the `WATCHTOWER_TOKEN` secret (which must match the `WATCHTOWER_API_TOKEN` defined in your server's `.env` file).
+
+### 1. Single Repository (via GitHub Web UI)
+1. Navigate to your repository on GitHub.
+2. Go to **Settings** ➔ **Secrets and variables** ➔ **Actions**.
+3. Click on **New repository secret**.
+4. Set **Name** to `WATCHTOWER_TOKEN` and enter your token value in **Secret**.
+5. Click **Add secret**.
+
+### 2. Organization-Wide (via GitHub Web UI)
+If your repositories belong to a GitHub Organization, you can define the secret once for all repositories:
+1. Go to your Organization page on GitHub.
+2. Navigate to **Settings** ➔ **Secrets and variables** ➔ **Actions**.
+3. Click on **New organization secret**.
+4. Set **Name** to `WATCHTOWER_TOKEN` and enter your token value.
+5. Under **Repository access**, select **All repositories** (or choose specific ones).
+6. Click **Add secret**.
+
+### 3. Using GitHub CLI (`gh`)
+You can quickly set the secret from your terminal using the GitHub CLI:
+
+- **For the current repository:**
+  ```bash
+  gh secret set WATCHTOWER_TOKEN -b "YOUR_TOKEN_HERE"
+  ```
+
+- **For a specific repository:**
+  ```bash
+  gh secret set WATCHTOWER_TOKEN --repo OWNER/REPO -b "YOUR_TOKEN_HERE"
+  ```
+
+- **For an entire organization:**
+  ```bash
+  gh secret set WATCHTOWER_TOKEN --org YOUR_ORG_NAME --visibility all -b "YOUR_TOKEN_HERE"
+  ```
 
 ---
 

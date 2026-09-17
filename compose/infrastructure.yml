@@ -11,16 +11,22 @@ services:
     networks:
       - common-network
 
-  # --- WATCHTOWER ---
-  # Controlla se ci sono nuove versioni delle immagini sul registry e le scarica/riavvia automaticamente.
+  # --- WATCHTOWER (Event-driven via HTTP API) ---
+  # Aggiorna i container solo su richiesta HTTP/Webhook (es. da GitHub Actions)
   watchtower:
-    image: nickfedor/watchtower:latest
+    image: containrrr/watchtower:latest
     container_name: watchtower
+    restart: always
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ~/.docker/config.json:/config.json
-    command: --interval 300 --cleanup
-    restart: always
+    environment:
+      - WATCHTOWER_HTTP_API_UPDATE=true
+      - WATCHTOWER_HTTP_API_TOKEN=${WATCHTOWER_API_TOKEN}
+      - WATCHTOWER_HTTP_API_PERIODIC_POLLS=false
+      - WATCHTOWER_CLEANUP=true
+    networks:
+      - common-network
 
   # --- STATIC FILE SERVER ---
   # Serve le SPA statiche che non hanno un container dedicato.
