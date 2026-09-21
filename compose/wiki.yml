@@ -5,6 +5,8 @@ services:
     container_name: wiki
     expose:
       - "80"
+    environment:
+      - WIKI_PASSWORD=${WIKI_PASSWORD}
     networks:
       - common-network
     restart: always
