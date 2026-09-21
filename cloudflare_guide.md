@@ -29,6 +29,7 @@ Configure the following hostname rules to match subdomains to their internal con
 | `lafa.robertoingenito.com`        | `/swagger*`        | HTTP         | `http://lafa-tools-back-end:8080`    | LAFA API Documentation          |
 | `lafa.robertoingenito.com`        | _Empty_            | HTTP         | `http://lafa-tools-front-end:80`     | LAFA Tools Frontend             |
 | `docmost.robertoingenito.com`     | _Empty_            | HTTP         | `http://docmost:3000`                | Wiki and documentation (Docmost)|
+| `wiki.robertoingenito.com`        | _Empty_            | HTTP         | `http://wiki:80`                     | Personal Wiki / Digital Brain (MkDocs) |
 | `watchtower.robertoingenito.com`  | _Empty_            | HTTP         | `http://watchtower:8080`             | Watchtower Webhook (automated deployments)|
 
 > [!IMPORTANT]

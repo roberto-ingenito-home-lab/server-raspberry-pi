@@ -57,6 +57,13 @@ Wiki e documentazione collaborativa (fork personalizzato con modifiche custom).
 - **Stack**: Node.js/NestJS, React, PostgreSQL, Redis
 - **Repo**: [docmost](https://github.com/roberto-ingenito-home-lab/docmost)
 
+### 🧠 Wiki (Digital Brain)
+
+Knowledge base e documentazione personale (SAP Business One, integrazioni, architettura e note tecniche).
+
+- **Stack**: MkDocs Material (Python / Pygments), Nginx
+- **Repo**: [wiki](https://github.com/roberto-ingenito-home-lab/wiki) (Privata)
+
 ### 📂 Nextcloud
 
 Cloud storage personale.
@@ -119,7 +126,8 @@ server-raspberry-pi/
 │   ├── lafa-tools.yml
 │   ├── docmost.yml
 │   ├── nextcloud.yml
-│   └── portfolio.yml
+│   ├── portfolio.yml
+│   └── wiki.yml
 ├── calcolatore-finanze/        # Codice sorgente calcolatore finanze
 ├── calcolatore-tasse/          # Codice sorgente calcolatore tasse
 ├── seos/                       # File SEO (robots.txt, sitemap.xml)
