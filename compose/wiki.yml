@@ -1,0 +1,15 @@
+services:
+  # --- WIKI (DIGITAL BRAIN) ---
+  wiki:
+    image: ghcr.io/roberto-ingenito-home-lab/wiki:latest
+    container_name: wiki
+    expose:
+      - "80"
+    networks:
+      - common-network
+    restart: always
+
+networks:
+  common-network:
+    external: true
+    name: common-network
