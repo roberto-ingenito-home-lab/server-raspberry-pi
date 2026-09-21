@@ -79,31 +79,24 @@ To enable GitHub Actions workflows to authenticate against Watchtower's HTTP API
 4. Set **Name** to `WATCHTOWER_TOKEN` and enter your token value in **Secret**.
 5. Click **Add secret**.
 
-### 2. Organization-Wide (via GitHub Web UI)
-If your repositories belong to a GitHub Organization, you can define the secret once for all repositories:
-1. Go to your Organization page on GitHub.
-2. Navigate to **Settings** ➔ **Secrets and variables** ➔ **Actions**.
-3. Click on **New organization secret**.
-4. Set **Name** to `WATCHTOWER_TOKEN` and enter your token value.
-5. Under **Repository access**, select **All repositories** (or choose specific ones).
-6. Click **Add secret**.
+### 2. Organization-Wide vs Repository Secrets (GitHub Free)
+> [!IMPORTANT]
+> Nei piani **GitHub Free** per organizzazioni, gli Organization Secrets con visibilità `all` vengono ereditati **solo dai repository pubblici**. Per i repository privati (come `wiki`, `LAFA-tools-frontend`, `LAFA-tools-backend`), il secret non viene ereditato automaticamente.
+> Per questo motivo, `WATCHTOWER_TOKEN` viene configurato a livello di singolo repository (o tramite script CLI).
 
 ### 3. Using GitHub CLI (`gh`)
-You can quickly set the secret from your terminal using the GitHub CLI:
+Puoi impostare o aggiornare rapidamente il secret tramite terminale:
 
-- **For the current repository:**
-  ```bash
-  gh secret set WATCHTOWER_TOKEN -b "YOUR_TOKEN_HERE"
-  ```
-
-- **For a specific repository:**
+- **Per un repository specifico:**
   ```bash
   gh secret set WATCHTOWER_TOKEN --repo OWNER/REPO -b "YOUR_TOKEN_HERE"
   ```
 
-- **For an entire organization:**
-  ```bash
-  gh secret set WATCHTOWER_TOKEN --org YOUR_ORG_NAME --visibility all -b "YOUR_TOKEN_HERE"
+- **Per tutti i repository dell'organizzazione (loop automatico):**
+  ```powershell
+  gh repo list roberto-ingenito-home-lab --json name --jq '.[].name' | ForEach-Object {
+      gh secret set WATCHTOWER_TOKEN --repo "roberto-ingenito-home-lab/$_" -b "YOUR_TOKEN_HERE"
+  }
   ```
 
 ---
