@@ -130,11 +130,15 @@ CLOUDFLARE_ZONE=yourdomain.com
 CLOUDFLARE_API_TOKEN_DDNS=your_cloudflare_api_token
 ```
 
-- Create the token in Manage Account
-- Account API Tokens
-- Create Token
-- In Permission policies, select "edit zone dns"
-- Create Token
+**How to create the correct API Token:**
+1. In the Cloudflare Dashboard, click on the **User Icon** (top right corner) and select **Profile** from the dropdown menu.
+2. In the left sidebar list, click on **API Tokens**.
+3. Click the **Create Token** button.
+4. Find the **Edit zone DNS** template in the list and click **Use template**.
+5. Give the token a recognizable name (e.g., "DDNS Updater").
+6. Under **Zone Resources**, ensure it's set to: `Include` ➔ `Specific zone` ➔ *Select your domain from the dropdown*.
+7. Click **Continue to summary** and then **Create Token**.
+8. Copy the generated string and paste it into your `.env` file.
 
 ### 2. DNS Record Configuration (Crucial)
 In your Cloudflare Dashboard:
