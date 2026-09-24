@@ -43,6 +43,20 @@ services:
       - common-network
     restart: always
 
+  # --- CLOUDFLARE DDNS ---
+  # Aggiorna automaticamente il record DNS su Cloudflare se l'IP di casa cambia.
+  cloudflare-ddns:
+    image: oznu/cloudflare-ddns:latest
+    container_name: cloudflare-ddns
+    restart: always
+    environment:
+      - API_KEY=${CLOUDFLARE_API_TOKEN_DDNS}
+      - ZONE=${CLOUDFLARE_ZONE} # Il tuo dominio principale (es. tuodominio.com)
+      - SUBDOMAIN=ssh           # Il sottodominio da aggiornare
+      - PROXIED=false           # DEVE essere false (nuvoletta grigia) per SSH diretto
+    networks:
+      - common-network
+
 networks:
   common-network:
     external: true

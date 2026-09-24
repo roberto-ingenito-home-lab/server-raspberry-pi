@@ -81,18 +81,18 @@ To enable GitHub Actions workflows to authenticate against Watchtower's HTTP API
 
 ### 2. Organization-Wide vs Repository Secrets (GitHub Free)
 > [!IMPORTANT]
-> Nei piani **GitHub Free** per organizzazioni, gli Organization Secrets con visibilità `all` vengono ereditati **solo dai repository pubblici**. Per i repository privati (come `wiki`, `LAFA-tools-frontend`, `LAFA-tools-backend`), il secret non viene ereditato automaticamente.
-> Per questo motivo, `WATCHTOWER_TOKEN` viene configurato a livello di singolo repository (o tramite script CLI).
+> In **GitHub Free** plans for organizations, Organization Secrets with `all` visibility are inherited **only by public repositories**. For private repositories (such as `wiki`, `LAFA-tools-frontend`, `LAFA-tools-backend`), the secret is not inherited automatically.
+> For this reason, `WATCHTOWER_TOKEN` must be configured at the individual repository level (or via CLI script).
 
 ### 3. Using GitHub CLI (`gh`)
-Puoi impostare o aggiornare rapidamente il secret tramite terminale:
+You can quickly set or update the secret via the terminal:
 
-- **Per un repository specifico:**
+- **For a specific repository:**
   ```bash
   gh secret set WATCHTOWER_TOKEN --repo OWNER/REPO -b "YOUR_TOKEN_HERE"
   ```
 
-- **Per tutti i repository dell'organizzazione (loop automatico):**
+- **For all repositories in the organization (automated loop):**
   ```powershell
   gh repo list roberto-ingenito-home-lab --json name --jq '.[].name' | ForEach-Object {
       gh secret set WATCHTOWER_TOKEN --repo "roberto-ingenito-home-lab/$_" -b "YOUR_TOKEN_HERE"
@@ -117,3 +117,41 @@ SEO files are located in the `./seos/` folder of the repository:
 1. **Cloudflare Routes**: Make sure to configure the routes for `/robots.txt` and `/sitemap.xml` for `robertoingenito.com` directing them to `http://static-files:80` (placing them **above** the generic portfolio route).
 2. **Domain Verification on GSC**: Add the **Domain** property for `robertoingenito.com` in Google Search Console.
 3. **Submit the Sitemap**: In the Search Console panel for `robertoingenito.com`, go to **Sitemaps** and submit the URL `https://robertoingenito.com/sitemap.xml`.
+
+---
+
+## 💻 Remote SSH Access
+
+### 1. Dynamic DNS (DDNS) Setup
+If you have a dynamic home IP address, the `cloudflare-ddns` container (configured in `infrastructure.yml`) will automatically update your Cloudflare DNS record whenever your home IP changes.
+To make it work, ensure your `.env` file contains:
+```env
+CLOUDFLARE_ZONE=yourdomain.com
+CLOUDFLARE_API_TOKEN_DDNS=your_cloudflare_api_token
+```
+
+- Create the token in Manage Account
+- Account API Tokens
+- Create Token
+- In Permission policies, select "edit zone dns"
+- Create Token
+
+### 2. DNS Record Configuration (Crucial)
+In your Cloudflare Dashboard:
+1. Go to **Domains** and select your domain.
+2. Go to **DNS** ➔ **Records** and click **Add record**.
+3. Fill in the fields exactly as follows:
+   - **Type**: `A`
+   - **Name**: `ssh` (This creates `ssh.yourdomain.com`).
+   - **IPv4 address**: Enter your **current home public IP address**. If you are at home, you can find this by visiting a site like [whatismyip.com](https://www.whatismyip.com/). (Don't worry if it's dynamic; the Docker DDNS container will update this automatically in the future).
+   - **Proxy status**: ⚠️ **Turn this OFF (Grey Cloud - "DNS Only")**. This is extremely important. Cloudflare cannot proxy direct SSH traffic, so it must act only as a simple DNS resolver.
+4. Click **Save**.
+
+### 3. Router Port Forwarding & Security
+1. Log into your home router's settings.
+2. Setup **Port Forwarding** directing an external port to your Raspberry Pi's internal LAN IP on port `22`.
+
+> [!WARNING]
+> **SECURITY BEST PRACTICES**
+> - **Change External Port**: Do not expose external port 22 directly. Map a high random port (e.g., `45222`) to internal port `22`. Your login command will then be: `ssh -p 45222 user@ssh.yourdomain.com`.
+> - **Disable Passwords**: Disable password authentication on your Raspberry Pi's SSH daemon and strictly use SSH Keys to prevent brute-force attacks.
