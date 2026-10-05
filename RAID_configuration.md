@@ -97,6 +97,22 @@ PasswordAuthentication yes
 EOF
 ```
 
+### 1.4.1 Configure SSH Key Authentication (Recommended)
+
+To authenticate without entering a password every time (e.g. from local terminal or automated tools):
+
+1. On your client machine (e.g., PowerShell on Windows or Linux terminal), generate an ED25519 key pair if you haven't already:
+   ```bash
+   ssh-keygen -t ed25519 -C "homelab-key"
+   ```
+2. On the server (logged in as `ingenitor`), add your public key:
+   ```bash
+   mkdir -p ~/.ssh && chmod 700 ~/.ssh
+   echo "INSERISCI_LA_TUA_CHIAVE_PUBBLICA_QUI" >> ~/.ssh/authorized_keys
+   chmod 600 ~/.ssh/authorized_keys
+   ```
+
+
 ### 1.5 Install mdadm and necessary tools
 
 ```bash
@@ -533,36 +549,108 @@ sudo dd if=/mnt/storage/test.img of=/dev/null bs=1M
 rm /mnt/storage/test.img
 ```
 
-## NVMe RAID Stability & Monthly Scrub Fix (Raspberry Pi 5)
+## NVMe RAID Stability & Monthly Scrub Fix (Raspberry Pi 5 + Pimoroni NVMe Duo)
 
-To prevent NVMe controllers from dropping off the PCIe bus or crashing during the monthly `mdadm` data check (`mdcheck` / `checkarray`), apply the following stability tweaks:
+### Problem Description & Root Cause
+On Raspberry Pi 5 with dual NVMe HATs (such as the Pimoroni NVMe Base Duo), both M.2 drives share a PCIe packet switch. 
 
-### 1. Disable NVMe Autonomous Power State Transitions (APST)
-NVMe power management causes controller reset failures under prolonged IO scrub on Raspberry Pi PCIe HATs.
+Every first Sunday of the month, `systemd` triggers `mdcheck_start.timer` (`/usr/share/mdadm/checkarray`), which initiates a full consistency scrub on `/dev/md127`.
+During this scrub, `mdadm` reads both NVMe drives concurrently at maximum speed:
+1. The prolonged, 100% duty cycle IO saturates the PCIe switch and causes voltage drops on the 3.3V rail.
+2. The controller on one of the drives (e.g., Patriot P320) exceeds the default 30-second kernel timeout (`nvme nvme0: I/O tag ... timeout, aborting req_op:READ`).
+3. The kernel attempts a reset (`Device not ready; aborting reset, CSTS=0x1`) and Function Level Reset (FLR), which ultimately times out (`Disabling device after reset failure: -25`).
+4. The disk node drops to `SIZE 0B` in `lsblk`, `mdadm` flags it as failed (`(F)`), and the array becomes degraded (`[U_]`).
 
-Edit `/boot/firmware/cmdline.txt` (or `/boot/cmdline.txt`) and append:
+The NVMe disk is **not defective**. It is a software/power timeout induced by unthrottled concurrent IO.
+
+---
+
+### Preventative Configuration (Permanent Fix)
+
+Apply these two system configurations to eliminate PCIe drops during future scrubs:
+
+#### 1. Configure Kernel Parameters (`cmdline.txt`)
+Edit `/boot/firmware/cmdline.txt` and append the following flags to the end of the single line (separated by spaces):
+
 ```text
-nvme_core.default_ps_max_latency_us=0
+nvme_core.default_ps_max_latency_us=0 nvme_core.io_timeout=120
 ```
 
-### 2. Limit RAID Data Check Speed Limit
-Prevent thermal throttling and power spikes during background scrub operations:
+- `nvme_core.default_ps_max_latency_us=0`: Disables Autonomous Power State Transitions (APST), keeping the NVMe controller from entering sleep states that fail to wake under load.
+- `nvme_core.io_timeout=120`: Increases the IO completion timeout from 30s to 120s, giving the NVMe controller ample time to flush its queues without triggering a kernel controller reset.
 
-Create `/etc/sysctl.d/99-raid-speed.conf`:
+Quick one-liner:
+```bash
+sudo sed -i 's/$/ nvme_core.io_timeout=120/' /boot/firmware/cmdline.txt
+```
+
+#### 2. Throttle RAID Scrub / Rebuild Speed (`sysctl`)
+By default, Linux allows RAID rebuilds and scrubs to run as fast as possible, causing thermal and power spikes on Pi 5.
+Cap the maximum speed to a safe 50 MB/s (`50000` KB/s):
+
+Create `/etc/sysctl.d/99-mdadm-speed.conf`:
 ```ini
 dev.raid.speed_limit_min = 1000
 dev.raid.speed_limit_max = 50000
 ```
-Apply with:
+
+Apply immediately without rebooting:
 ```bash
-sudo sysctl -p /etc/sysctl.d/99-raid-speed.conf
+sudo sysctl -p /etc/sysctl.d/99-mdadm-speed.conf
 ```
 
-### 3. Re-adding a Failed NVMe Disk after Reboot
-If an NVMe dropped due to reset failure (`CSTS=0x1` / `FLR timeout`):
+Verify active limit:
 ```bash
-# After reboot:
-sudo mdadm /dev/md127 --remove failed
-sudo mdadm /dev/md127 --add /dev/nvme1n1
+cat /proc/sys/dev/raid/speed_limit_max
+# Output: 50000
 ```
+
+---
+
+### Recovery Procedure (When a Disk Drops)
+
+If a disk has already dropped and shows `(F)` or `SIZE 0B`:
+
+#### Step 1: Check Current State
+```bash
+cat /proc/mdstat
+lsblk
+```
+If one disk shows `0B`, its controller was disabled by the kernel. A reboot is required to re-enumerate the PCIe device.
+
+#### Step 2: Reboot the Server
+```bash
+sudo reboot
+```
+
+#### Step 3: Verify Both NVMe Disks are Detected
+After reboot, verify both disks are present with full size (~238.5 GB):
+```bash
+lsblk
+nvme list
+```
+Identify which device is currently active in `md127` and which device is missing from the array (e.g., `nvme0n1` is active, `nvme1n1` is missing).
+
+#### Step 4: Re-Add the Missing Disk to the Array
+```bash
+# If nvme1n1 is the disk to re-add:
+sudo mdadm /dev/md127 --add /dev/nvme1n1
+
+# Or if nvme0n1 is the disk to re-add:
+sudo mdadm /dev/md127 --add /dev/nvme0n1
+```
+
+#### Step 5: Monitor the Rebuild
+```bash
+watch cat /proc/mdstat
+```
+Because the array has a **write-intent bitmap** enabled, `mdadm` only synchronizes blocks changed during the outage. The recovery typically completes in **under 4 minutes**!
+
+Once finished, `/proc/mdstat` will show:
+```text
+md127 : active raid1 nvme1n1[2] nvme0n1[3]
+      249925632 blocks super 1.2 [2/2] [UU]
+```
+The RAID 1 array is fully redundant and healthy.
+
 
