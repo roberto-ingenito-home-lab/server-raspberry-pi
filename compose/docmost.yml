@@ -2,6 +2,8 @@ services:
   docmost:
     image: ghcr.io/ingenito-roberto/docmost-custom:latest
     container_name: docmost
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
     depends_on:
       docmost-db:
         condition: service_healthy

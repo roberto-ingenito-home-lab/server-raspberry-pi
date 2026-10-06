@@ -3,6 +3,8 @@ services:
   mr-white-back-end:
     image: ghcr.io/roberto-ingenito-home-lab/mr-white-back-end:latest
     container_name: mr-white-back-end
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
     expose:
       - "80"
     environment:
@@ -15,6 +17,8 @@ services:
   mr-white-front-end:
     image: ghcr.io/roberto-ingenito-home-lab/mr-white-front-end:latest
     container_name: mr-white-front-end
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
     expose:
       - "3000"
     environment:

@@ -3,6 +3,8 @@ services:
   wiki:
     image: ghcr.io/roberto-ingenito-home-lab/wiki:latest
     container_name: wiki
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
     expose:
       - "80"
     environment:

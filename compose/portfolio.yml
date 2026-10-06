@@ -3,6 +3,8 @@ services:
   portfolio:
     image: ghcr.io/roberto-ingenito-home-lab/portfolio-app:latest
     container_name: portfolio-app
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
     expose:
       - "80"
     networks:

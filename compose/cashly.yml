@@ -4,6 +4,8 @@ services:
   cashly-back-end:
     image: ghcr.io/roberto-ingenito-home-lab/cashly-back-end:latest
     container_name: cashly-back-end
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
     expose:
       - "80"
     depends_on:
@@ -51,6 +53,8 @@ services:
   cashly-front-end:
     image: ghcr.io/roberto-ingenito-home-lab/cashly-front-end:latest
     container_name: cashly-front-end
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
     expose:
       - "80"
     networks:

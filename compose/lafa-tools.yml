@@ -4,6 +4,8 @@ services:
   lafa-tools-back-end:
     image: ghcr.io/roberto-ingenito-home-lab/lafa-tools-back-end:latest
     container_name: lafa-tools-back-end
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
     expose:
       - "8080"
     environment:
@@ -21,6 +23,8 @@ services:
   lafa-tools-front-end:
     image: ghcr.io/roberto-ingenito-home-lab/lafa-tools-front-end:latest
     container_name: lafa-tools-front-end
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
     expose:
       - "80"
     networks:
