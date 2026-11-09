@@ -3,7 +3,7 @@ services:
   # Applicazione Nextcloud (Cloud storage)
   nextcloud:
     container_name: nextcloud-app
-    image: nextcloud:32-apache
+    image: nextcloud:35-apache
     expose:
       - "80"
     depends_on:
@@ -70,7 +70,7 @@ services:
   # Servizio Cron per le operazioni in background di Nextcloud
   nextcloud-cron:
     container_name: nextcloud-cron
-    image: nextcloud:32-apache
+    image: nextcloud:35-apache
     entrypoint: /cron.sh
     depends_on:
       nextcloud-db:
