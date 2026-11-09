@@ -103,7 +103,7 @@ You can quickly set or update the secret via the terminal:
 
 ## 📈 SEO Management and Google Search Console
 
-An [Nginx](static-files/nginx.conf) server has been configured in centralized mode to serve SEO indexing files exclusively for the main portfolio `robertoingenito.com` and exclude all other subdomains.
+An [Nginx](../static-files/nginx.conf) server has been configured in centralized mode to serve SEO indexing files exclusively for the main portfolio `robertoingenito.com` and exclude all other subdomains.
 
 ### File Structure on the Server
 

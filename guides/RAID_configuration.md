@@ -7,7 +7,7 @@
 - **Boot**: microSD (operating system)
 - **Storage**: RAID 1 on two NVMes (data)
 - **Access**: SSH with password, `ingenitor` superuser
-- **Network**: Static IP `192.168.1.20`
+- **Network**: Static IP `192.168.1.100`
 
 ## Prerequisites
 
@@ -59,7 +59,7 @@ usermod -aG sudo,adm,dialout,cdrom,audio,video,plugdev,netdev,lxd ingenitor
 groups ingenitor
 ```
 
-### 1.3 Configure static IP (192.168.1.20)
+### 1.3 Configure static IP (192.168.1.100)
 
 ```bash
 # Still inside the chroot
@@ -70,7 +70,7 @@ network:
     eth0:
       dhcp4: no
       addresses:
-        - 192.168.1.20/24
+        - 192.168.1.100/24
       routes:
         - to: default
           via: 192.168.1.1
@@ -112,7 +112,6 @@ To authenticate without entering a password every time (e.g. from local terminal
    chmod 600 ~/.ssh/authorized_keys
    ```
 
-
 ### 1.5 Install mdadm and necessary tools
 
 ```bash
@@ -153,7 +152,7 @@ It should boot from the microSD.
 ### 2.4 Connect via SSH
 
 ```bash
-ssh ingenitor@192.168.1.20
+ssh ingenitor@192.168.1.100
 ```
 
 **Note:** If on the first boot Ubuntu asks to change the password for the `ubuntu` user, you can ignore it and log in directly with `ingenitor`.
@@ -306,18 +305,16 @@ echo "RAID 1 funziona!" > /mnt/storage/test.txt
 cat /mnt/storage/test.txt
 ```
 
-### 6 Telegram Notifications
+## Phase 6: Telegram Notifications
 
 **Setup:**
 
 1. Create a Telegram bot:
-
    - Talk to [@BotFather](https://t.me/botfather) on Telegram
    - Use `/newbot` and follow instructions
    - Get the bot **TOKEN**
 
 2. Get your **CHAT_ID**:
-
    - Talk to [@userinfobot](https://t.me/userinfobot)
    - It will give you your CHAT_ID
 
@@ -552,10 +549,12 @@ rm /mnt/storage/test.img
 ## NVMe RAID Stability & Monthly Scrub Fix (Raspberry Pi 5 + Pimoroni NVMe Duo)
 
 ### Problem Description & Root Cause
-On Raspberry Pi 5 with dual NVMe HATs (such as the Pimoroni NVMe Base Duo), both M.2 drives share a PCIe packet switch. 
+
+On Raspberry Pi 5 with dual NVMe HATs (such as the Pimoroni NVMe Base Duo), both M.2 drives share a PCIe packet switch.
 
 Every first Sunday of the month, `systemd` triggers `mdcheck_start.timer` (`/usr/share/mdadm/checkarray`), which initiates a full consistency scrub on `/dev/md127`.
 During this scrub, `mdadm` reads both NVMe drives concurrently at maximum speed:
+
 1. The prolonged, 100% duty cycle IO saturates the PCIe switch and causes voltage drops on the 3.3V rail.
 2. The controller on one of the drives (e.g., Patriot P320) exceeds the default 30-second kernel timeout (`nvme nvme0: I/O tag ... timeout, aborting req_op:READ`).
 3. The kernel attempts a reset (`Device not ready; aborting reset, CSTS=0x1`) and Function Level Reset (FLR), which ultimately times out (`Disabling device after reset failure: -25`).
@@ -570,6 +569,7 @@ The NVMe disk is **not defective**. It is a software/power timeout induced by un
 Apply these two system configurations to eliminate PCIe drops during future scrubs:
 
 #### 1. Configure Kernel Parameters (`cmdline.txt`)
+
 Edit `/boot/firmware/cmdline.txt` and append the following flags to the end of the single line (separated by spaces):
 
 ```text
@@ -580,26 +580,31 @@ nvme_core.default_ps_max_latency_us=0 nvme_core.io_timeout=120
 - `nvme_core.io_timeout=120`: Increases the IO completion timeout from 30s to 120s, giving the NVMe controller ample time to flush its queues without triggering a kernel controller reset.
 
 Quick one-liner:
+
 ```bash
 sudo sed -i 's/$/ nvme_core.io_timeout=120/' /boot/firmware/cmdline.txt
 ```
 
 #### 2. Throttle RAID Scrub / Rebuild Speed (`sysctl`)
+
 By default, Linux allows RAID rebuilds and scrubs to run as fast as possible, causing thermal and power spikes on Pi 5.
 Cap the maximum speed to a safe 50 MB/s (`50000` KB/s):
 
 Create `/etc/sysctl.d/99-mdadm-speed.conf`:
+
 ```ini
 dev.raid.speed_limit_min = 1000
 dev.raid.speed_limit_max = 50000
 ```
 
 Apply immediately without rebooting:
+
 ```bash
 sudo sysctl -p /etc/sysctl.d/99-mdadm-speed.conf
 ```
 
 Verify active limit:
+
 ```bash
 cat /proc/sys/dev/raid/speed_limit_max
 # Output: 50000
@@ -612,26 +617,33 @@ cat /proc/sys/dev/raid/speed_limit_max
 If a disk has already dropped and shows `(F)` or `SIZE 0B`:
 
 #### Step 1: Check Current State
+
 ```bash
 cat /proc/mdstat
 lsblk
 ```
+
 If one disk shows `0B`, its controller was disabled by the kernel. A reboot is required to re-enumerate the PCIe device.
 
 #### Step 2: Reboot the Server
+
 ```bash
 sudo reboot
 ```
 
 #### Step 3: Verify Both NVMe Disks are Detected
+
 After reboot, verify both disks are present with full size (~238.5 GB):
+
 ```bash
 lsblk
 nvme list
 ```
+
 Identify which device is currently active in `md127` and which device is missing from the array (e.g., `nvme0n1` is active, `nvme1n1` is missing).
 
 #### Step 4: Re-Add the Missing Disk to the Array
+
 ```bash
 # If nvme1n1 is the disk to re-add:
 sudo mdadm /dev/md127 --add /dev/nvme1n1
@@ -641,16 +653,18 @@ sudo mdadm /dev/md127 --add /dev/nvme0n1
 ```
 
 #### Step 5: Monitor the Rebuild
+
 ```bash
 watch cat /proc/mdstat
 ```
+
 Because the array has a **write-intent bitmap** enabled, `mdadm` only synchronizes blocks changed during the outage. The recovery typically completes in **under 4 minutes**!
 
 Once finished, `/proc/mdstat` will show:
+
 ```text
 md127 : active raid1 nvme1n1[2] nvme0n1[3]
       249925632 blocks super 1.2 [2/2] [UU]
 ```
+
 The RAID 1 array is fully redundant and healthy.
-
-

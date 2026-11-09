@@ -83,6 +83,8 @@ Utility HTML/JS servite da nginx interno:
 
 ## ⚙️ Setup
 
+> 🗺️ **Configurazione da zero del server?** Segui la [**Guida Principale di Setup (Step-by-Step)**](server_setup_guide.md), che ti accompagna in ordine cronologico attraverso tutte le guide e i passaggi preparatori.
+
 ### 1. Prerequisiti
 
 - Docker e Docker Compose installati
@@ -130,10 +132,12 @@ server-raspberry-pi/
 │   └── wiki.yml
 ├── calcolatore-finanze/        # Codice sorgente calcolatore finanze
 ├── calcolatore-tasse/          # Codice sorgente calcolatore tasse
+├── guides/                     # Guide specifiche di configurazione e manutenzione
+├── scripts/                    # Script di automazione e backup database
 ├── seos/                       # File SEO (robots.txt, sitemap.xml)
 ├── static-files/               # File statici serviti da Nginx
 ├── .env.template               # Template variabili d'ambiente
-└── *.md                        # Guide di configurazione
+└── server_setup_guide.md       # Guida principale di setup passo-passo
 ```
 
 Il `docker-compose.yml` principale utilizza la direttiva `include` per importare i compose modulari dalla cartella `compose/`, mantenendo ogni servizio isolato e facilmente gestibile.
@@ -144,7 +148,7 @@ Il `docker-compose.yml` principale utilizza la direttiva `include` per importare
 
 La gestione delle rotte e dei domini è delegata interamente a Cloudflare Tunnel tramite la console web di Cloudflare Zero Trust.
 
-Per la mappa completa dei sottodomini e dei relativi servizi Docker interni configurati, consulta il file di documentazione [cloudflare_guide.md](cloudflare_guide.md).
+Per la mappa completa dei sottodomini e dei relativi servizi Docker interni configurati, consulta il file di documentazione [cloudflare_guide.md](guides/cloudflare_guide.md).
 
 ---
 
@@ -168,10 +172,12 @@ docker compose up -d --build [service-name]
 
 ## 📄 Documentazione correlata
 
-- [🏗️ Infrastruttura & Setup Host](raspberry_pi_infrastructure.md)
-- [🐳 Configurazione Docker per il RAID](docker_RAID_configuration.md)
-- [☁️ Configurazione Cloudflare](cloudflare_guide.md)
-- [💾 Backup & Restore Postgres](backup_and_restore_postgres.md)
-- [🗄️ Configurazione RAID](RAID_configuration.md)
-- [🔑 Recupero Password Cashly](cashly_password_recovery_guide.md)
-- [🧹 Guida Pulizia e Ottimizzazione WSL2](Docker-WSL2-Optimization-Guide.md)
+- **[🗺️ Guida Principale di Setup del Server (Step-by-Step)](server_setup_guide.md)**
+- [🗄️ Configurazione OS & RAID 1 NVMe](guides/RAID_configuration.md)
+- [🏗️ Infrastruttura & Rete Host](guides/raspberry_pi_infrastructure.md)
+- [🛡️ Sicurezza SSH con Fail2ban](guides/fail2ban_guide.md)
+- [🐳 Configurazione Docker sul RAID & Nextcloud](guides/docker_RAID_configuration.md)
+- [🔑 Configurazione SMTP & Recupero Password Cashly](guides/cashly_password_recovery_guide.md)
+- [☁️ Configurazione Cloudflare, Watchtower, SEO & SSH Remoto](guides/cloudflare_guide.md)
+- [💾 Backup & Restore Database PostgreSQL](guides/backup_and_restore_postgres.md)
+- [🧹 Guida Pulizia e Ottimizzazione Spazio Docker / WSL2](guides/Docker-WSL2-Optimization-Guide.md)
