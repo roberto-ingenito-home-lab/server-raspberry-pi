@@ -5,6 +5,9 @@ services:
     image: cloudflare/cloudflared:latest
     container_name: cloudflared
     restart: always
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
     environment:
       - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}
     command: tunnel --no-autoupdate run
