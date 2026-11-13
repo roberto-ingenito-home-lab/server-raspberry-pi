@@ -11,7 +11,7 @@ services:
       - POSTGRES_PASSWORD=${CV_POSTGRES_PASSWORD}
       - POSTGRES_DB=${CV_POSTGRES_DB}
     volumes:
-      - cv_builder_pgdata:/var/lib/postgresql/data
+      - cv_builder_pgdata:/var/lib/postgresql
     networks:
       - common-network
     restart: always
