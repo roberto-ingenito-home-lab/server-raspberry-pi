@@ -3,7 +3,7 @@ services:
   # Database Postgres per CV Builder
   cv-builder-database:
     container_name: cv-builder-database
-    image: postgres:16-alpine
+    image: postgres:18-alpine3.22
     expose:
       - "5432"
     environment:
