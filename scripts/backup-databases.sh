@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # Script di Backup Automatico Database PostgreSQL (Docker)
-# Servizi: Cashly, Nextcloud, Docmost
+# Servizi: Cashly, Nextcloud, Docmost, CV Builder
 # ==============================================================================
 
 set -uo pipefail
@@ -38,6 +38,10 @@ NEXTCLOUD_DB="nextcloud"
 DOCMOST_CONTAINER="docmost-db"
 DOCMOST_USER="${DOCMOST_DB_USER:-docmost_admin}"
 DOCMOST_DB="${DOCMOST_DB_NAME:-docmost_db}"
+
+CV_BUILDER_CONTAINER="cv-builder-database"
+CV_BUILDER_USER="${CV_POSTGRES_USER:-cvuser}"
+CV_BUILDER_DB="${CV_POSTGRES_DB:-cvdb}"
 
 # --- FUNZIONI DI LOGGING ---
 log() {
@@ -118,6 +122,9 @@ main() {
 
     # 3. Docmost
     backup_postgres "$DOCMOST_CONTAINER" "$DOCMOST_USER" "$DOCMOST_DB" "docmost" || ((errors++))
+
+    # 4. CV Builder
+    backup_postgres "$CV_BUILDER_CONTAINER" "$CV_BUILDER_USER" "$CV_BUILDER_DB" "cv-builder" || ((errors++))
 
     # 4. Pulizia vecchi backup
     clean_old_backups

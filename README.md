@@ -64,6 +64,15 @@ Knowledge base e documentazione personale (SAP Business One, integrazioni, archi
 - **Stack**: MkDocs Material (Python / Pygments), Nginx
 - **Repo**: [wiki](https://github.com/roberto-ingenito-home-lab/wiki) (Privata)
 
+### 📄 CV Builder
+
+Generatore di CV LaTeX ATS-friendly con live preview, compilazione PDF (`pdflatex`), modalità ospite e account multi-utente.
+
+- **Backend**: Node.js / Express + TypeScript + `pdflatex` → `/api/` (interno)
+- **Frontend**: React + Vite + Tailwind CSS (Nginx)
+- **Database**: PostgreSQL
+- **Repo**: [cv-builder-backend](https://github.com/roberto-ingenito-home-lab/cv-builder-backend) · [cv-builder-frontend](https://github.com/roberto-ingenito-home-lab/cv-builder-frontend)
+
 ### 📂 Nextcloud
 
 Cloud storage personale.

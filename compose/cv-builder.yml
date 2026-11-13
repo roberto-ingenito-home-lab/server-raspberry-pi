@@ -1,0 +1,72 @@
+services:
+  # --- CV BUILDER APPLICATION ---
+  # Database Postgres per CV Builder
+  cv-builder-database:
+    container_name: cv-builder-database
+    image: postgres:16-alpine
+    expose:
+      - "5432"
+    environment:
+      - POSTGRES_USER=${CV_POSTGRES_USER}
+      - POSTGRES_PASSWORD=${CV_POSTGRES_PASSWORD}
+      - POSTGRES_DB=${CV_POSTGRES_DB}
+    volumes:
+      - cv_builder_pgdata:/var/lib/postgresql/data
+    networks:
+      - common-network
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${CV_POSTGRES_USER} -d ${CV_POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # Backend Node.js / Express + pdflatex
+  cv-builder-backend:
+    image: ghcr.io/roberto-ingenito-home-lab/cv-builder-backend:latest
+    container_name: cv-builder-backend
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+    expose:
+      - "4000"
+    depends_on:
+      cv-builder-database:
+        condition: service_healthy
+    environment:
+      - PORT=4000
+      - DATABASE_URL=postgresql://${CV_POSTGRES_USER}:${CV_POSTGRES_PASSWORD}@cv-builder-database:5432/${CV_POSTGRES_DB}
+      - JWT_SECRET=${CV_JWT_SECRET}
+      - COOKIE_SECURE=${CV_COOKIE_SECURE:-true}
+      - APP_URL=${CV_APP_URL}
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_SECURE=false
+      - SMTP_USER=${SMTP_USERNAME:-}
+      - SMTP_PASS=${SMTP_PASSWORD:-}
+      - SMTP_FROM=${CV_SMTP_FROM:-}
+    networks:
+      - common-network
+    restart: always
+
+  # Frontend React (nginx)
+  cv-builder-frontend:
+    image: ghcr.io/roberto-ingenito-home-lab/cv-builder-frontend:latest
+    container_name: cv-builder-frontend
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+    expose:
+      - "80"
+    networks:
+      - common-network
+    restart: always
+    depends_on:
+      - cv-builder-backend
+
+networks:
+  common-network:
+    external: true
+    name: common-network
+
+volumes:
+  cv_builder_pgdata:

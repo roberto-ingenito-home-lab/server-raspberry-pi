@@ -1,13 +1,13 @@
 # PostgreSQL Backup and Restore
 
-Questa guida documenta la strategia di backup automatico e le procedure di ripristino per i database PostgreSQL dell'infrastruttura (**Cashly**, **Nextcloud**, **Docmost**).
+Questa guida documenta la strategia di backup automatico e le procedure di ripristino per i database PostgreSQL dell'infrastruttura (**Cashly**, **Nextcloud**, **Docmost**, **CV Builder**).
 
 ---
 
 ## ⏰ Backup Automatico Giornaliero (Cron Job)
 
 Nella cartella `scripts/` è presente lo script [`backup-databases.sh`](../scripts/backup-databases.sh) che:
-- Effettua il dump dei 3 database PostgreSQL (`cashly-database`, `nextcloud-db`, `docmost-db`).
+- Effettua il dump dei database PostgreSQL (`cashly-database`, `nextcloud-db`, `docmost-db`, `cv-builder-database`).
 - Comprime i dump al volo con `gzip` (`.sql.gz`) risparmiando oltre l'80% dello spazio.
 - Salva i file sul RAID in `/mnt/storage/backups/databases/<servizio>/`.
 - Elimina automaticamente i backup più vecchi di **14 giorni** (retention configurabile).
